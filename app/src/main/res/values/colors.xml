@@ -4,11 +4,11 @@
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D81B60</color>
 
-    <color name="colorRed">#FF0000</color>
-    <color name="colorOrange">#FFA500</color>
-    <color name="colorYellow">#FFFF00</color>
-    <color name="colorGreen">#00FF00</color>
-    <color name="colorBlue">#007FFF</color>
-    <color name="colorIndigo">#0000FF</color>
-    <color name="colorViolet">#7F00FF</color>
+    <color name="colorRed">#80FF0000</color>
+    <color name="colorOrange">#80FFA500</color>
+    <color name="colorYellow">#80FFFF00</color>
+    <color name="colorGreen">#8000FF00</color>
+    <color name="colorBlue">#80007FFF</color>
+    <color name="colorIndigo">#800000FF</color>
+    <color name="colorViolet">#807F00FF</color>
 </resources>

@@ -21,8 +21,7 @@
         app:dot_color_default="#80000000"
         app:dot_color_selected="@color/colorBlue"
         app:dot_count="7"
-        app:dot_size="8dp"
-        app:dot_space="16dp"
-        app:scale_factor="0.6" />
+        app:dot_size="16dp"
+        app:dot_space="32dp"/>
 
 </RelativeLayout>
