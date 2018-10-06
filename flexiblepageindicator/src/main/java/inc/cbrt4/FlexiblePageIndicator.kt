@@ -1,5 +1,6 @@
-package inc.cbrt4.flexiblepageindicator
+package inc.cbrt4
 
+import android.animation.ArgbEvaluator
 import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
@@ -13,8 +14,22 @@ import android.support.v4.view.ViewPager.OnPageChangeListener
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
+import inc.cbrt4.flexiblepageindicator.R
 
 class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(context, attrs), OnPageChangeListener {
+
+    companion object {
+        const val keyPropertyMoveFactor = "moveFactor"
+        const val keyPropertyRadius = "radius"
+        const val keyPropertyColor = "color"
+
+        const val defaultDotCount = 7
+        const val defaultScaleFactor = 0.6F
+        const val minScaleFactor = 0.4F
+        const val maxScaleFactor = 0.8F
+    }
+
+    private var moveFactor: Float = 0F
 
     private var dotCount: Int = 0
     private var dotSize: Float = 0F
@@ -127,7 +142,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         for (i: Int in 0 until dotCount) {
             if (dotCount < 5) {
                 canvas.drawCircle(
-                        (width / (dotCount + 1) * (i + 1)).toFloat() + paddingStart,
+                        (width / (dotCount + 1) * (i + 1)).toFloat() + paddingStart + moveFactor,
                         (height / 2).toFloat(),
                         dotSize / 2,
                         when (i) {
@@ -137,11 +152,11 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
             } else {
                 canvas.drawCircle(
                         when {
-                            cursorStart == 0 -> (width / (dotCount + 1) * (i + 3)).toFloat() + paddingStart
-                            cursorStart == 1 -> (width / (dotCount + 1) * (i + 2)).toFloat() + paddingStart
-                            cursorEnd == totalDotCount - 1 -> (width / (dotCount + 1) * (i - 1)).toFloat() + paddingStart
-                            cursorEnd == totalDotCount - 2 -> (width / (dotCount + 1) * i).toFloat() + paddingStart
-                            else -> (width / (dotCount + 1) * (i + 1)).toFloat() + paddingStart
+                            cursorStart == 0 -> (width / (dotCount + 1) * (i + 3)).toFloat() + paddingStart + moveFactor
+                            cursorStart == 1 -> (width / (dotCount + 1) * (i + 2)).toFloat() + paddingStart + moveFactor
+                            cursorEnd == totalDotCount - 1 -> (width / (dotCount + 1) * (i - 1)).toFloat() + paddingStart + moveFactor
+                            cursorEnd == totalDotCount - 2 -> (width / (dotCount + 1) * i).toFloat() + paddingStart + moveFactor
+                            else -> (width / (dotCount + 1) * (i + 1)).toFloat() + paddingStart + moveFactor
                         },
                         (height / 2).toFloat(),
                         when (i) {
@@ -163,13 +178,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-
+        animator.currentPlayTime = (animationDuration * positionOffset).toLong()
     }
 
     override fun onPageSelected(position: Int) {
         selectedPosition = position
         move(position)
-        updateView()
+        invalidate()
     }
 
     fun setupWithViewPager(viewPager: ViewPager) {
@@ -183,30 +198,15 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     private fun setupAnimator() {
-        val propertyMove = PropertyValuesHolder.ofFloat(keyPropertyMove, 0F, dotSpace)
-        val propertyHeight = PropertyValuesHolder.ofFloat(keyPropertyHeight, 0F, 360F)
-        val propertyWidth = PropertyValuesHolder.ofFloat(keyPropertyWidth, 0F, 360F)
+        val propertyMoveFactor = PropertyValuesHolder.ofFloat(keyPropertyMoveFactor, 0F, dotSpace)
+        val propertyRadius = PropertyValuesHolder.ofFloat(keyPropertyRadius, 0F, 360F)
         val propertyColor = PropertyValuesHolder.ofInt(keyPropertyColor, dotSelectedPaint.color, dotDefaultPaint.color)
 
-        var move: Float
-        var height: Float
-        var width: Float
-        //var color = 0
-
-        animator.setValues(propertyMove, propertyHeight, propertyWidth, propertyColor)
-        //animator.setEvaluator(ArgbEvaluator())
+        animator.setValues(propertyMoveFactor, propertyRadius, propertyColor)
+//        animator.setEvaluator(ArgbEvaluator())
         animator.interpolator = AccelerateDecelerateInterpolator()
         animator.duration = animationDuration
-        animator.addUpdateListener { animation ->
-            move = animation.getAnimatedValue(keyPropertyMove) as Float
-            height = animation.getAnimatedValue(keyPropertyHeight) as Float
-            width = animation.getAnimatedValue(keyPropertyWidth) as Float
-            //color = animation.getAnimatedValue(keyPropertyColor) as Int
-
-            print(move)
-            print(height)
-            print(width)
-        }
+        animator.addUpdateListener { animation -> updateView(animation) }
     }
 
     private fun move(position: Int) {
@@ -224,20 +224,9 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         cursorEnd += bias
     }
 
-    private fun updateView() {
-        animator.start()
+    private fun updateView(animation: ValueAnimator) {
+        //magic here
+        moveFactor = animation.getAnimatedValue(keyPropertyMoveFactor) as Float
         invalidate()
-    }
-
-    companion object {
-        const val keyPropertyMove = "move"
-        const val keyPropertyHeight = "height"
-        const val keyPropertyWidth = "width"
-        const val keyPropertyColor = "color"
-
-        const val defaultDotCount = 7
-        const val defaultScaleFactor = 0.6F
-        const val minScaleFactor = 0.4F
-        const val maxScaleFactor = 0.8F
     }
 }
