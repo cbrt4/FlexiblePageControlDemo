@@ -1,5 +1,6 @@
 package inc.cbrt4
 
+import android.animation.ArgbEvaluator
 import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
@@ -148,7 +149,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 //        }
 
         for (position: Int in 0 until dotCount) {
-            if (dotCount < 5) {
+            if (dotCount < 7) {
                 canvas.drawCircle(
                         (width / (dotCount + 1) * (position + 1)).toFloat() + paddingStart - animationMoveFactor,
                         (height / 2).toFloat(),
@@ -175,7 +176,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     override fun onPageSelected(position: Int) {
         selectedPosition = position
-        move(position)
+        move()
     }
 
     fun setupWithViewPager(viewPager: ViewPager) {
@@ -198,7 +199,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         val propertyInvisibleScaleFactor =
                 PropertyValuesHolder.ofFloat(keyPropertyInvisibleScaleFactor, 0F, scaleFactor * scaleFactor)
         val propertyColor =
-                PropertyValuesHolder.ofInt(keyPropertyColor, dotSelectedPaint.color, dotDefaultPaint.color)
+                PropertyValuesHolder.ofObject(keyPropertyColor, ArgbEvaluator(), dotSelectedPaint.color, dotDefaultPaint.color)
 
         animator.setValues(propertyMoveForwardFactor,
                 propertyMediumScaleFactor,
@@ -210,10 +211,10 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         animator.addUpdateListener { animation -> updateView(animation) }
     }
 
-    private fun move(position: Int) {
+    private fun move() {
         val bias = when {
-            position > cursorEnd -> position - cursorEnd
-            position < cursorStart -> position - cursorStart
+            selectedPosition > cursorEnd -> selectedPosition - cursorEnd
+            selectedPosition < cursorStart -> selectedPosition - cursorStart
             else -> 0
         }
 
@@ -277,15 +278,18 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     private fun updateView(animation: ValueAnimator) {
-        animationMoveFactor = if (reverseAnimation) {
+        animationMoveFactor = if (reverseAnimation && selectedPosition == cursorStart) {
             animation.getAnimatedValue(keyPropertyMoveFactor) as Float - dotSpace
-        } else {
+        } else if (!reverseAnimation && selectedPosition == cursorEnd) {
             animation.getAnimatedValue(keyPropertyMoveFactor) as Float
+        } else {
+            0F
         }
 
         animationMediumScaleFactor = animation.getAnimatedValue(keyPropertyMediumScaleFactor) as Float
         animationSmallScaleFactor = animation.getAnimatedValue(keyPropertySmallScaleFactor) as Float
         animationInvisibleScaleFactor = animation.getAnimatedValue(keyPropertyInvisibleScaleFactor) as Float
+        animation.getAnimatedValue(keyPropertyColor) as Int
 
         invalidate()
     }
