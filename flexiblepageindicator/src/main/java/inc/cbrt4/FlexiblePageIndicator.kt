@@ -1,6 +1,5 @@
 package inc.cbrt4
 
-import android.animation.ArgbEvaluator
 import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
@@ -19,8 +18,10 @@ import inc.cbrt4.flexiblepageindicator.R
 class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(context, attrs), OnPageChangeListener {
 
     companion object {
-        const val keyPropertyMoveFactor = "moveFactor"
-        const val keyPropertyRadius = "radius"
+        const val keyPropertyMoveFactor = "animationMoveFactor"
+        const val keyPropertyMediumScaleFactor = "animationMediumScaleFactor"
+        const val keyPropertySmallScaleFactor = "animationSmallScaleFactor"
+        const val keyPropertyInvisibleScaleFactor = "animationInvisibleScaleFactor"
         const val keyPropertyColor = "color"
 
         const val defaultDotCount = 7
@@ -29,16 +30,14 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         const val maxScaleFactor = 0.8F
     }
 
-    private var moveFactor: Float = 0F
+    private val dotSelectedPaint = Paint()
+    private val dotDefaultPaint = Paint()
+    private val animationDuration: Long = 300
 
     private var dotCount: Int = 0
     private var dotSize: Float = 0F
     private var dotSpace: Float = 0F
     private var scaleFactor: Float = 0F
-
-    private val dotSelectedPaint = Paint()
-    private val dotDefaultPaint = Paint()
-    private val animationDuration: Long = 300
 
     private var totalDotCount: Int = 0
     private var cursorStart: Int = 0
@@ -46,6 +45,11 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var selectedPosition: Int = 0
 
     private var animator: ValueAnimator = ValueAnimator()
+    private var animationMoveFactor: Float = 0F
+    private var animationMediumScaleFactor: Float = 0F
+    private var animationSmallScaleFactor: Float = 0F
+    private var animationInvisibleScaleFactor: Float = 0F
+    private var reverseAnimation: Boolean = false
 
     init {
         context.theme.obtainStyledAttributes(
@@ -71,6 +75,10 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 if (scaleFactor > maxScaleFactor || scaleFactor < minScaleFactor) {
                     scaleFactor = defaultScaleFactor
                 }
+
+                animationMediumScaleFactor = scaleFactor
+                animationSmallScaleFactor = scaleFactor * scaleFactor
+                animationInvisibleScaleFactor = 0F
 
                 setupAnimator()
 
@@ -139,36 +147,19 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 //            paddingRight
 //        }
 
-        for (i: Int in 0 until dotCount) {
+        for (position: Int in 0 until dotCount) {
             if (dotCount < 5) {
                 canvas.drawCircle(
-                        (width / (dotCount + 1) * (i + 1)).toFloat() + paddingStart + moveFactor,
+                        (width / (dotCount + 1) * (position + 1)).toFloat() + paddingStart - animationMoveFactor,
                         (height / 2).toFloat(),
                         dotSize / 2,
-                        when (i) {
-                            selectedPosition -> dotSelectedPaint
-                            else -> dotDefaultPaint
-                        })
+                        indicatorPaint(position))
             } else {
                 canvas.drawCircle(
-                        when {
-                            cursorStart == 0 -> (width / (dotCount + 1) * (i + 3)).toFloat() + paddingStart + moveFactor
-                            cursorStart == 1 -> (width / (dotCount + 1) * (i + 2)).toFloat() + paddingStart + moveFactor
-                            cursorEnd == totalDotCount - 1 -> (width / (dotCount + 1) * (i - 1)).toFloat() + paddingStart + moveFactor
-                            cursorEnd == totalDotCount - 2 -> (width / (dotCount + 1) * i).toFloat() + paddingStart + moveFactor
-                            else -> (width / (dotCount + 1) * (i + 1)).toFloat() + paddingStart + moveFactor
-                        },
+                        indicatorX(position, paddingStart.toFloat()),
                         (height / 2).toFloat(),
-                        when (i) {
-                            in cursorStart..cursorEnd -> dotSize / 2
-                            cursorStart - 2, cursorEnd + 2 -> dotSize * scaleFactor * scaleFactor / 2
-                            cursorStart - 1, cursorEnd + 1 -> dotSize * scaleFactor / 2
-                            else -> 0F
-                        },
-                        when (i) {
-                            selectedPosition -> dotSelectedPaint
-                            else -> dotDefaultPaint
-                        })
+                        indicatorRadius(position),
+                        indicatorPaint(position))
             }
         }
     }
@@ -178,13 +169,15 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+        reverseAnimation = position < selectedPosition
+        println("$positionOffset to $position, is reverse: $reverseAnimation")
+
         animator.currentPlayTime = (animationDuration * positionOffset).toLong()
     }
 
     override fun onPageSelected(position: Int) {
         selectedPosition = position
         move(position)
-        invalidate()
     }
 
     fun setupWithViewPager(viewPager: ViewPager) {
@@ -198,12 +191,22 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     private fun setupAnimator() {
-        val propertyMoveFactor = PropertyValuesHolder.ofFloat(keyPropertyMoveFactor, 0F, dotSpace)
-        val propertyRadius = PropertyValuesHolder.ofFloat(keyPropertyRadius, 0F, 360F)
-        val propertyColor = PropertyValuesHolder.ofInt(keyPropertyColor, dotSelectedPaint.color, dotDefaultPaint.color)
+        val propertyMoveForwardFactor =
+                PropertyValuesHolder.ofFloat(keyPropertyMoveFactor, 0F, dotSpace)
+        val propertyMediumScaleFactor =
+                PropertyValuesHolder.ofFloat(keyPropertyMediumScaleFactor, scaleFactor, 1F)
+        val propertySmallScaleFactor =
+                PropertyValuesHolder.ofFloat(keyPropertySmallScaleFactor, scaleFactor * scaleFactor, scaleFactor)
+        val propertyInvisibleScaleFactor =
+                PropertyValuesHolder.ofFloat(keyPropertyInvisibleScaleFactor, 0F, scaleFactor * scaleFactor)
+        val propertyColor =
+                PropertyValuesHolder.ofInt(keyPropertyColor, dotSelectedPaint.color, dotDefaultPaint.color)
 
-        animator.setValues(propertyMoveFactor, propertyRadius, propertyColor)
-//        animator.setEvaluator(ArgbEvaluator())
+        animator.setValues(propertyMoveForwardFactor,
+                propertyMediumScaleFactor,
+                propertySmallScaleFactor,
+                propertyInvisibleScaleFactor,
+                propertyColor)
         animator.interpolator = AccelerateDecelerateInterpolator()
         animator.duration = animationDuration
         animator.addUpdateListener { animation -> updateView(animation) }
@@ -224,9 +227,68 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         cursorEnd += bias
     }
 
+    private fun indicatorX(position: Int, paddingStart: Float): Float {
+        return paddingStart - animationMoveFactor + when {
+            cursorStart == 0 -> (width / (dotCount + 1) * (position + 3)).toFloat()
+            cursorStart == 1 -> (width / (dotCount + 1) * (position + 2)).toFloat()
+            cursorEnd == totalDotCount - 1 -> (width / (dotCount + 1) * (position - 1)).toFloat()
+            cursorEnd == totalDotCount - 2 -> (width / (dotCount + 1) * position).toFloat()
+            else -> (width / (dotCount + 1) * (position + 1)).toFloat()
+        }
+    }
+
+    private fun indicatorRadius(position: Int): Float {
+        return if (reverseAnimation) {
+            when (position) {
+
+                cursorStart - 3 -> dotSize * (scaleFactor * scaleFactor - animationInvisibleScaleFactor) / 2
+                cursorStart - 2 -> dotSize * (scaleFactor * scaleFactor + scaleFactor - animationSmallScaleFactor) / 2
+                cursorStart - 1 -> dotSize * (scaleFactor + scaleFactor - animationSmallScaleFactor) / 2
+
+                in cursorStart until cursorEnd -> dotSize / 2
+                cursorEnd -> dotSize * animationMediumScaleFactor / 2
+
+                cursorEnd + 1 -> dotSize * animationSmallScaleFactor / 2
+                cursorEnd + 2 -> dotSize * animationInvisibleScaleFactor / 2
+
+                else -> 0F
+            }
+        } else {
+            when (position) {
+
+                cursorStart - 2 -> dotSize * (scaleFactor * scaleFactor - animationInvisibleScaleFactor) / 2
+                cursorStart - 1 -> dotSize * (scaleFactor * scaleFactor + scaleFactor - animationSmallScaleFactor) / 2
+
+                cursorStart -> dotSize * (scaleFactor + 1F - animationMediumScaleFactor) / 2
+                in cursorStart + 1..cursorEnd -> dotSize / 2
+
+                cursorEnd + 1 -> dotSize * animationMediumScaleFactor / 2
+                cursorEnd + 2 -> dotSize * animationSmallScaleFactor / 2
+                cursorEnd + 3 -> dotSize * animationInvisibleScaleFactor / 2
+
+                else -> 0F
+            }
+        }
+    }
+
+    private fun indicatorPaint(position: Int): Paint {
+        return when (position) {
+            selectedPosition -> dotSelectedPaint
+            else -> dotDefaultPaint
+        }
+    }
+
     private fun updateView(animation: ValueAnimator) {
-        //magic here
-        moveFactor = animation.getAnimatedValue(keyPropertyMoveFactor) as Float
+        animationMoveFactor = if (reverseAnimation) {
+            animation.getAnimatedValue(keyPropertyMoveFactor) as Float - dotSpace
+        } else {
+            animation.getAnimatedValue(keyPropertyMoveFactor) as Float
+        }
+
+        animationMediumScaleFactor = animation.getAnimatedValue(keyPropertyMediumScaleFactor) as Float
+        animationSmallScaleFactor = animation.getAnimatedValue(keyPropertySmallScaleFactor) as Float
+        animationInvisibleScaleFactor = animation.getAnimatedValue(keyPropertyInvisibleScaleFactor) as Float
+
         invalidate()
     }
 }
