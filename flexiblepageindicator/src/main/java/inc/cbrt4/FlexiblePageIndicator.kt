@@ -170,8 +170,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
         reverseAnimation = position < selectedPosition
-        println("$positionOffset to $position, is reverse: $reverseAnimation")
-
         animator.currentPlayTime = (animationDuration * positionOffset).toLong()
     }
 
