@@ -149,7 +149,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 //        }
 
         for (position: Int in 0 until dotCount) {
-            if (dotCount < 7) {
+            if (totalDotCount < dotCount) {
                 canvas.drawCircle(
                         (width / (dotCount + 1) * (position + 1)).toFloat() + paddingStart - animationMoveFactor,
                         (height / 2).toFloat(),
