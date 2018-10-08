@@ -69,6 +69,10 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 dotDefaultColor = getColor(R.styleable.FlexiblePageIndicator_dotColorDefault, Color.GRAY)
                 dotSelectedColor = getColor(R.styleable.FlexiblePageIndicator_dotColorSelected, Color.BLUE)
 
+                dotSelectedPaint.isAntiAlias = true
+                dotUnselectedPaint.isAntiAlias = true
+                dotDefaultPaint.isAntiAlias = true
+
                 dotSelectedPaint.color = dotSelectedColor
                 dotUnselectedPaint.color = dotDefaultColor
                 dotDefaultPaint.color = dotDefaultColor
@@ -103,8 +107,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     @SuppressLint("SwitchIntDef")
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
 
-        val desiredWidth = dotCount * dotSpace
-        val desiredHeight = dotSpace
+        val contentWidth = dotCount * dotSpace
+        val contentHeight = dotSpace
 
         val paddingTop = paddingTop
         val paddingBottom = paddingBottom
@@ -126,14 +130,14 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
         val width: Int = when (widthMode) {
             MeasureSpec.EXACTLY -> widthSize
-            MeasureSpec.AT_MOST -> Math.min(desiredWidth.toInt(), widthSize)
-            else -> desiredWidth.toInt()
+            MeasureSpec.AT_MOST -> Math.min(contentWidth.toInt(), widthSize)
+            else -> contentWidth.toInt()
         }
 
         val height: Int = when (heightMode) {
             MeasureSpec.EXACTLY -> heightSize
-            MeasureSpec.AT_MOST -> Math.min(desiredHeight.toInt(), heightSize)
-            else -> desiredHeight.toInt()
+            MeasureSpec.AT_MOST -> Math.min(contentHeight.toInt(), heightSize)
+            else -> contentHeight.toInt()
         }
 
         setMeasuredDimension(width + paddingStart + paddingEnd, height + paddingTop + paddingBottom)
