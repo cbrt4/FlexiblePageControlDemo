@@ -36,7 +36,15 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private val dotUnselectedPaint = Paint()
     private val dotDefaultPaint = Paint()
     private val animationDuration: Long = 300
+    private val indicatorCalculator = IndicatorCalculator()
 
+    private var viewPaddingTop: Int = 0
+    private var viewPaddingBottom: Int = 0
+    private var viewPaddingStart: Int = 0
+    private var viewPaddingEnd: Int = 0
+
+    private var viewWidth: Int = 0
+    private var viewHeight: Int = 0
 
     private var dotDefaultColor: Int = 0
     private var dotSelectedColor: Int = 0
@@ -107,21 +115,21 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     @SuppressLint("SwitchIntDef")
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
 
-        val contentWidth = dotCount * dotSpace
-        val contentHeight = dotSpace
-
-        val paddingTop = paddingTop
-        val paddingBottom = paddingBottom
-        val paddingStart = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+        viewPaddingTop = paddingTop
+        viewPaddingBottom = paddingBottom
+        viewPaddingStart = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             paddingStart
         } else {
             paddingLeft
         }
-        val paddingEnd = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+        viewPaddingEnd = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             paddingEnd
         } else {
             paddingRight
         }
+
+        val contentWidth = dotCount * dotSpace
+        val contentHeight = dotSpace
 
         val widthMode = MeasureSpec.getMode(widthMeasureSpec)
         val widthSize = MeasureSpec.getSize(widthMeasureSpec)
@@ -140,43 +148,20 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
             else -> contentHeight.toInt()
         }
 
-        setMeasuredDimension(width + paddingStart + paddingEnd, height + paddingTop + paddingBottom)
+        setMeasuredDimension(width + viewPaddingStart + viewPaddingEnd, height + paddingTop + paddingBottom)
     }
 
     override fun onDraw(canvas: Canvas) {
 
-        var width = width
-
-        val paddingStart = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            width -= paddingStart
-            paddingStart
-        } else {
-            width -= paddingLeft
-            paddingLeft
-        }
-
-//        val paddingEnd = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-//            width -= paddingEnd
-//            paddingEnd
-//        } else {
-//            width -= paddingRight
-//            paddingRight
-//        }
+        viewWidth = width - viewPaddingStart - viewPaddingEnd
+        viewHeight = height - viewPaddingTop - viewPaddingBottom
 
         for (position: Int in 0 until dotCount) {
-            if (totalDotCount < dotCount) {
-                canvas.drawCircle(
-                        (width / (dotCount + 1) * (position + 1)).toFloat() + paddingStart - animationMoveFactor,
-                        (height / 2).toFloat(),
-                        dotSize / 2,
-                        indicatorPaint(position))
-            } else {
-                canvas.drawCircle(
-                        indicatorX(position, paddingStart.toFloat()),
-                        (height / 2).toFloat(),
-                        indicatorRadius(position),
-                        indicatorPaint(position))
-            }
+            canvas.drawCircle(
+                    indicatorCalculator.indicator(position).x,
+                    indicatorCalculator.indicator(position).y,
+                    indicatorCalculator.indicator(position).radius,
+                    indicatorCalculator.indicator(position).paint)
         }
     }
 
@@ -191,15 +176,23 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     override fun onPageSelected(position: Int) {
         selectedPosition = position
-        move()
+        scroll()
     }
 
     fun setupWithViewPager(viewPager: ViewPager) {
         viewPager.adapter?.let {
             totalDotCount = it.count
             selectedPosition = viewPager.currentItem
-            cursorStart = selectedPosition
-            cursorEnd = cursorStart + dotCount - 5
+
+            if (totalDotCount <= dotCount) {
+                dotCount = totalDotCount
+                cursorStart = 0
+                cursorEnd = totalDotCount - 1
+            } else {
+                cursorStart = selectedPosition
+                cursorEnd = cursorStart + dotCount - 5
+            }
+
             viewPager.addOnPageChangeListener(this)
         }
     }
@@ -229,7 +222,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         animator.addUpdateListener { animation -> updateView(animation) }
     }
 
-    private fun move() {
+    private fun scroll() {
         val bias = when {
             selectedPosition > cursorEnd -> selectedPosition - cursorEnd
             selectedPosition < cursorStart -> selectedPosition - cursorStart
@@ -242,68 +235,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
         cursorStart += bias
         cursorEnd += bias
-    }
-
-    private fun indicatorX(position: Int, paddingStart: Float): Float {
-        return paddingStart - animationMoveFactor + when {
-            cursorStart == 0 -> (width / (dotCount + 1) * (position + 3)).toFloat()
-            cursorStart == 1 -> (width / (dotCount + 1) * (position + 2)).toFloat()
-            cursorEnd == totalDotCount - 1 -> (width / (dotCount + 1) * (position - 1)).toFloat()
-            cursorEnd == totalDotCount - 2 -> (width / (dotCount + 1) * position).toFloat()
-            else -> (width / (dotCount + 1) * (position + 1)).toFloat()
-        }
-    }
-
-    private fun indicatorRadius(position: Int): Float {
-        return if (reverseAnimation) {
-            when (position) {
-
-                cursorStart - 3 -> dotSize * (scaleFactor * scaleFactor - animationInvisibleScaleFactor) / 2
-                cursorStart - 2 -> dotSize * (scaleFactor * scaleFactor + scaleFactor - animationSmallScaleFactor) / 2
-                cursorStart - 1 -> dotSize * (scaleFactor + scaleFactor - animationSmallScaleFactor) / 2
-
-                in cursorStart until cursorEnd -> dotSize / 2
-                cursorEnd -> dotSize * animationMediumScaleFactor / 2
-
-                cursorEnd + 1 -> dotSize * animationSmallScaleFactor / 2
-                cursorEnd + 2 -> dotSize * animationInvisibleScaleFactor / 2
-
-                else -> 0F
-            }
-        } else {
-            when (position) {
-
-                cursorStart - 2 -> dotSize * (scaleFactor * scaleFactor - animationInvisibleScaleFactor) / 2
-                cursorStart - 1 -> dotSize * (scaleFactor * scaleFactor + scaleFactor - animationSmallScaleFactor) / 2
-
-                cursorStart -> dotSize * (scaleFactor + 1F - animationMediumScaleFactor) / 2
-                in cursorStart + 1..cursorEnd -> dotSize / 2
-
-                cursorEnd + 1 -> dotSize * animationMediumScaleFactor / 2
-                cursorEnd + 2 -> dotSize * animationSmallScaleFactor / 2
-                cursorEnd + 3 -> dotSize * animationInvisibleScaleFactor / 2
-
-                else -> 0F
-            }
-        }
-    }
-
-    private fun indicatorPaint(position: Int): Paint {
-        dotSelectedPaint.color = animationColor
-        dotUnselectedPaint.color = animationColorReverse
-        return if (reverseAnimation) {
-            when (position) {
-                selectedPosition - 1 -> dotSelectedPaint
-                selectedPosition -> dotUnselectedPaint
-                else -> dotDefaultPaint
-            }
-        } else {
-            when (position) {
-                selectedPosition -> dotSelectedPaint
-                selectedPosition + 1 -> dotUnselectedPaint
-                else -> dotDefaultPaint
-            }
-        }
     }
 
     private fun updateView(animation: ValueAnimator) {
@@ -324,4 +255,76 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
         invalidate()
     }
+
+    private inner class IndicatorCalculator {
+
+        fun indicator(position: Int): Indicator {
+            val x = viewPaddingStart - animationMoveFactor +
+                    if (totalDotCount <= dotCount) {
+                        (viewWidth / (dotCount + 1) * (position + 1)).toFloat()
+                    } else {
+                        when {
+                            cursorStart == 0 -> (viewWidth / (dotCount + 1) * (position + 3)).toFloat()
+                            cursorStart == 1 -> (viewWidth / (dotCount + 1) * (position + 2)).toFloat()
+                            cursorEnd == totalDotCount - 1 -> (viewWidth / (dotCount + 1) * (position - 1)).toFloat()
+                            cursorEnd == totalDotCount - 2 -> (viewWidth / (dotCount + 1) * position).toFloat()
+                            else -> (viewWidth / (dotCount + 1) * (position + 1)).toFloat()
+                        }
+                    }
+
+            val y = (height / 2).toFloat()
+
+            val radius = if (reverseAnimation) {
+                when (position) {
+
+                    cursorStart - 3 -> dotSize * (scaleFactor * scaleFactor - animationInvisibleScaleFactor) / 2
+                    cursorStart - 2 -> dotSize * (scaleFactor * scaleFactor + scaleFactor - animationSmallScaleFactor) / 2
+                    cursorStart - 1 -> dotSize * (scaleFactor + scaleFactor - animationSmallScaleFactor) / 2
+
+                    in cursorStart until cursorEnd -> dotSize / 2
+                    cursorEnd -> dotSize * animationMediumScaleFactor / 2
+
+                    cursorEnd + 1 -> dotSize * animationSmallScaleFactor / 2
+                    cursorEnd + 2 -> dotSize * animationInvisibleScaleFactor / 2
+
+                    else -> 0F
+                }
+            } else {
+                when (position) {
+
+                    cursorStart - 2 -> dotSize * (scaleFactor * scaleFactor - animationInvisibleScaleFactor) / 2
+                    cursorStart - 1 -> dotSize * (scaleFactor * scaleFactor + scaleFactor - animationSmallScaleFactor) / 2
+
+                    cursorStart -> dotSize * (scaleFactor + 1F - animationMediumScaleFactor) / 2
+                    in cursorStart + 1..cursorEnd -> dotSize / 2
+
+                    cursorEnd + 1 -> dotSize * animationMediumScaleFactor / 2
+                    cursorEnd + 2 -> dotSize * animationSmallScaleFactor / 2
+                    cursorEnd + 3 -> dotSize * animationInvisibleScaleFactor / 2
+
+                    else -> 0F
+                }
+            }
+
+            dotSelectedPaint.color = animationColor
+            dotUnselectedPaint.color = animationColorReverse
+            val paint = if (reverseAnimation) {
+                when (position) {
+                    selectedPosition - 1 -> dotSelectedPaint
+                    selectedPosition -> dotUnselectedPaint
+                    else -> dotDefaultPaint
+                }
+            } else {
+                when (position) {
+                    selectedPosition -> dotSelectedPaint
+                    selectedPosition + 1 -> dotUnselectedPaint
+                    else -> dotDefaultPaint
+                }
+            }
+
+            return Indicator(x, y, radius, paint)
+        }
+    }
+
+    private inner class Indicator(val x: Float, val y: Float, val radius: Float, val paint: Paint)
 }

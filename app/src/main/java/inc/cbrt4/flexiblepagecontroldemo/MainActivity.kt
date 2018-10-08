@@ -10,7 +10,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
-    val colorArray: Array<Int> = arrayOf(R.color.colorRed, R.color.colorOrange, R.color.colorYellow, R.color.colorGreen, R.color.colorBlue, R.color.colorIndigo, R.color.colorViolet)
+    val colorArray: Array<Int> = arrayOf(R.color.colorRed, R.color.colorOrange, R.color.colorYellow, R.color.colorGreen, R.color.colorBlue, R.color.colorIndigo, R.color.colorViolet, R.color.colorWhite, R.color.colorGrey)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
