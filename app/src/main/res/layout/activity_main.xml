@@ -17,7 +17,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_margin="16dp"
+        android:padding="16dp"
         app:dotColorDefault="#80000000"
         app:dotColorSelected="@color/colorBlue"
         app:dotCount="7"

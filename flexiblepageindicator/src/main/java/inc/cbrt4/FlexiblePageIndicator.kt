@@ -66,6 +66,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var animationColor: Int = 0
     private var animationColorReverse: Int = 0
     private var reverseAnimation: Boolean = false
+    private var scrollableIndication: Boolean = true
+    private var canScroll: Boolean = false
 
     init {
         context.theme.obtainStyledAttributes(
@@ -171,6 +173,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
         reverseAnimation = position < selectedPosition
+        canScroll = position == cursorStart -1 || position == cursorEnd
         animator.currentPlayTime = (animationDuration * positionOffset).toLong()
     }
 
@@ -184,13 +187,15 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
             totalDotCount = it.count
             selectedPosition = viewPager.currentItem
 
-            if (totalDotCount <= dotCount) {
+            scrollableIndication = totalDotCount > dotCount
+
+            if (scrollableIndication) {
+                cursorStart = selectedPosition
+                cursorEnd = cursorStart + dotCount - 5
+            } else {
                 dotCount = totalDotCount
                 cursorStart = 0
                 cursorEnd = totalDotCount - 1
-            } else {
-                cursorStart = selectedPosition
-                cursorEnd = cursorStart + dotCount - 5
             }
 
             viewPager.addOnPageChangeListener(this)
@@ -246,9 +251,11 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
             0F
         }
 
-        animationMediumScaleFactor = animation.getAnimatedValue(keyPropertyMediumScaleFactor) as Float
-        animationSmallScaleFactor = animation.getAnimatedValue(keyPropertySmallScaleFactor) as Float
-        animationInvisibleScaleFactor = animation.getAnimatedValue(keyPropertyInvisibleScaleFactor) as Float
+        if (canScroll) {
+            animationMediumScaleFactor = animation.getAnimatedValue(keyPropertyMediumScaleFactor) as Float
+            animationSmallScaleFactor = animation.getAnimatedValue(keyPropertySmallScaleFactor) as Float
+            animationInvisibleScaleFactor = animation.getAnimatedValue(keyPropertyInvisibleScaleFactor) as Float
+        }
 
         animationColor = animation.getAnimatedValue(keyPropertyColor) as Int
         animationColorReverse = animation.getAnimatedValue(keyPropertyColorReverse) as Int
@@ -260,9 +267,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
         fun indicator(position: Int): Indicator {
             val x = viewPaddingStart - animationMoveFactor +
-                    if (totalDotCount <= dotCount) {
-                        (viewWidth / (dotCount + 1) * (position + 1)).toFloat()
-                    } else {
+                    if (scrollableIndication) {
                         when {
                             cursorStart == 0 -> (viewWidth / (dotCount + 1) * (position + 3)).toFloat()
                             cursorStart == 1 -> (viewWidth / (dotCount + 1) * (position + 2)).toFloat()
@@ -270,6 +275,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                             cursorEnd == totalDotCount - 2 -> (viewWidth / (dotCount + 1) * position).toFloat()
                             else -> (viewWidth / (dotCount + 1) * (position + 1)).toFloat()
                         }
+                    } else {
+                        (viewWidth / (dotCount + 1) * (position + 1)).toFloat()
                     }
 
             val y = (height / 2).toFloat()
