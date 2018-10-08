@@ -24,6 +24,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         const val keyPropertySmallScaleFactor = "animationSmallScaleFactor"
         const val keyPropertyInvisibleScaleFactor = "animationInvisibleScaleFactor"
         const val keyPropertyColor = "color"
+        const val keyPropertyColorReverse = "colorReverse"
 
         const val defaultDotCount = 7
         const val defaultScaleFactor = 0.6F
@@ -32,9 +33,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     private val dotSelectedPaint = Paint()
+    private val dotUnselectedPaint = Paint()
     private val dotDefaultPaint = Paint()
     private val animationDuration: Long = 300
 
+
+    private var dotDefaultColor: Int = 0
+    private var dotSelectedColor: Int = 0
     private var dotCount: Int = 0
     private var dotSize: Float = 0F
     private var dotSpace: Float = 0F
@@ -50,6 +55,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var animationMediumScaleFactor: Float = 0F
     private var animationSmallScaleFactor: Float = 0F
     private var animationInvisibleScaleFactor: Float = 0F
+    private var animationColor: Int = 0
+    private var animationColorReverse: Int = 0
     private var reverseAnimation: Boolean = false
 
     init {
@@ -59,19 +66,23 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 0,
                 0).apply {
             try {
-                dotDefaultPaint.color = getColor(R.styleable.FlexiblePageIndicator_dot_color_default, Color.GRAY)
-                dotSelectedPaint.color = getColor(R.styleable.FlexiblePageIndicator_dot_color_selected, Color.BLUE)
+                dotDefaultColor = getColor(R.styleable.FlexiblePageIndicator_dotColorDefault, Color.GRAY)
+                dotSelectedColor = getColor(R.styleable.FlexiblePageIndicator_dotColorSelected, Color.BLUE)
 
-                dotCount = getInteger(R.styleable.FlexiblePageIndicator_dot_count, defaultDotCount)
+                dotSelectedPaint.color = dotSelectedColor
+                dotUnselectedPaint.color = dotDefaultColor
+                dotDefaultPaint.color = dotDefaultColor
 
-                dotSize = getDimension(R.styleable.FlexiblePageIndicator_dot_size, resources.getDimension(R.dimen.dot_size_default))
-                dotSpace = getDimension(R.styleable.FlexiblePageIndicator_dot_space, resources.getDimension(R.dimen.dot_space_default))
+                dotCount = getInteger(R.styleable.FlexiblePageIndicator_dotCount, defaultDotCount)
+
+                dotSize = getDimension(R.styleable.FlexiblePageIndicator_dotSize, resources.getDimension(R.dimen.dot_size_default))
+                dotSpace = getDimension(R.styleable.FlexiblePageIndicator_dotSpace, resources.getDimension(R.dimen.dot_space_default))
 
                 if (dotSpace <= dotSize) {
-                    scaleFactor = 2 * dotSize
+                    dotSpace = 2 * dotSize
                 }
 
-                scaleFactor = getFloat(R.styleable.FlexiblePageIndicator_scale_factor, defaultScaleFactor)
+                scaleFactor = getFloat(R.styleable.FlexiblePageIndicator_scaleFactor, defaultScaleFactor)
 
                 if (scaleFactor > maxScaleFactor || scaleFactor < minScaleFactor) {
                     scaleFactor = defaultScaleFactor
@@ -81,7 +92,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 animationSmallScaleFactor = scaleFactor * scaleFactor
                 animationInvisibleScaleFactor = 0F
 
-                setupAnimator()
+                setupAnimations()
 
             } finally {
                 recycle()
@@ -189,7 +200,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         }
     }
 
-    private fun setupAnimator() {
+    private fun setupAnimations() {
         val propertyMoveForwardFactor =
                 PropertyValuesHolder.ofFloat(keyPropertyMoveFactor, 0F, dotSpace)
         val propertyMediumScaleFactor =
@@ -199,13 +210,16 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         val propertyInvisibleScaleFactor =
                 PropertyValuesHolder.ofFloat(keyPropertyInvisibleScaleFactor, 0F, scaleFactor * scaleFactor)
         val propertyColor =
-                PropertyValuesHolder.ofObject(keyPropertyColor, ArgbEvaluator(), dotSelectedPaint.color, dotDefaultPaint.color)
+                PropertyValuesHolder.ofObject(keyPropertyColor, ArgbEvaluator(), dotSelectedColor, dotDefaultColor)
+        val propertyColorReverse =
+                PropertyValuesHolder.ofObject(keyPropertyColorReverse, ArgbEvaluator(), dotDefaultColor, dotSelectedColor)
 
         animator.setValues(propertyMoveForwardFactor,
                 propertyMediumScaleFactor,
                 propertySmallScaleFactor,
                 propertyInvisibleScaleFactor,
-                propertyColor)
+                propertyColor,
+                propertyColorReverse)
         animator.interpolator = AccelerateDecelerateInterpolator()
         animator.duration = animationDuration
         animator.addUpdateListener { animation -> updateView(animation) }
@@ -271,8 +285,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     private fun indicatorPaint(position: Int): Paint {
-        return when (position) {
-            selectedPosition -> dotSelectedPaint
+        dotSelectedPaint.color = animationColor
+        dotUnselectedPaint.color = animationColorReverse
+        println()
+        return when {
+            position == selectedPosition -> dotSelectedPaint
+            position == selectedPosition - 1 && reverseAnimation -> dotUnselectedPaint
+            position == selectedPosition + 1 && !reverseAnimation -> dotUnselectedPaint
             else -> dotDefaultPaint
         }
     }
@@ -289,7 +308,9 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         animationMediumScaleFactor = animation.getAnimatedValue(keyPropertyMediumScaleFactor) as Float
         animationSmallScaleFactor = animation.getAnimatedValue(keyPropertySmallScaleFactor) as Float
         animationInvisibleScaleFactor = animation.getAnimatedValue(keyPropertyInvisibleScaleFactor) as Float
-        animation.getAnimatedValue(keyPropertyColor) as Int
+
+        animationColor = animation.getAnimatedValue(keyPropertyColor) as Int
+        animationColorReverse = animation.getAnimatedValue(keyPropertyColorReverse) as Int
 
         invalidate()
     }

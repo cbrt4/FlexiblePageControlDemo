@@ -18,10 +18,10 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_margin="16dp"
-        app:dot_color_default="#80000000"
-        app:dot_color_selected="@color/colorBlue"
-        app:dot_count="7"
-        app:dot_size="16dp"
-        app:dot_space="32dp"/>
+        app:dotColorDefault="#80000000"
+        app:dotColorSelected="@color/colorBlue"
+        app:dotCount="7"
+        app:dotSize="12dp"
+        app:dotSpace="24dp" />
 
 </RelativeLayout>
