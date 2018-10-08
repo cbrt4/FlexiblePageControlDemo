@@ -287,12 +287,18 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private fun indicatorPaint(position: Int): Paint {
         dotSelectedPaint.color = animationColor
         dotUnselectedPaint.color = animationColorReverse
-        println()
-        return when {
-            position == selectedPosition -> dotSelectedPaint
-            position == selectedPosition - 1 && reverseAnimation -> dotUnselectedPaint
-            position == selectedPosition + 1 && !reverseAnimation -> dotUnselectedPaint
-            else -> dotDefaultPaint
+        return if (reverseAnimation) {
+            when (position) {
+                selectedPosition - 1 -> dotSelectedPaint
+                selectedPosition -> dotUnselectedPaint
+                else -> dotDefaultPaint
+            }
+        } else {
+            when (position) {
+                selectedPosition -> dotSelectedPaint
+                selectedPosition + 1 -> dotUnselectedPaint
+                else -> dotDefaultPaint
+            }
         }
     }
 
