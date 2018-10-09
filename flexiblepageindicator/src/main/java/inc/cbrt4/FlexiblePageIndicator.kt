@@ -15,10 +15,13 @@ import android.util.AttributeSet
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import inc.cbrt4.flexiblepageindicator.R
+import java.util.*
 
 class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(context, attrs), OnPageChangeListener {
 
     companion object {
+        const val tag = "FlexiblePageIndicator"
+
         const val keyPropertyMoveFactor = "animationMoveFactor"
         const val keyPropertyMediumScaleFactor = "animationMediumScaleFactor"
         const val keyPropertySmallScaleFactor = "animationSmallScaleFactor"
@@ -35,39 +38,39 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private val dotSelectedPaint = Paint()
     private val dotUnselectedPaint = Paint()
     private val dotDefaultPaint = Paint()
-    private val animationDuration: Long = 300
+    private val animationDuration = 300L
     private val indicatorCalculator = IndicatorCalculator()
 
-    private var viewPaddingTop: Int = 0
-    private var viewPaddingBottom: Int = 0
-    private var viewPaddingStart: Int = 0
-    private var viewPaddingEnd: Int = 0
+    private var viewPaddingTop = 0
+    private var viewPaddingBottom = 0
+    private var viewPaddingStart = 0
+    private var viewPaddingEnd = 0
 
-    private var viewWidth: Int = 0
-    private var viewHeight: Int = 0
+    private var viewWidth = 0
+    private var viewHeight = 0
 
-    private var dotDefaultColor: Int = 0
-    private var dotSelectedColor: Int = 0
-    private var dotCount: Int = 0
-    private var dotSize: Float = 0F
-    private var dotSpace: Float = 0F
-    private var scaleFactor: Float = 0F
+    private var dotDefaultColor = 0
+    private var dotSelectedColor = 0
+    private var dotCount = 0
+    private var dotSize = 0F
+    private var dotSpace = 0F
+    private var scaleFactor = 0F
 
-    private var totalDotCount: Int = 0
-    private var cursorStart: Int = 0
-    private var cursorEnd: Int = 0
-    private var selectedPosition: Int = 0
+    private var totalDotCount = 0
+    private var cursorStart = 0
+    private var cursorEnd = 0
+    private var bias = 2
+    private var selectedPosition = 0
 
-    private var animator: ValueAnimator = ValueAnimator()
-    private var animationMoveFactor: Float = 0F
-    private var animationMediumScaleFactor: Float = 0F
-    private var animationSmallScaleFactor: Float = 0F
-    private var animationInvisibleScaleFactor: Float = 0F
-    private var animationColor: Int = 0
-    private var animationColorReverse: Int = 0
-    private var reverseAnimation: Boolean = false
-    private var scrollableIndication: Boolean = true
-    private var canScroll: Boolean = false
+    private var animator = ValueAnimator()
+    private var animationMoveFactor = 0F
+    private var animationMediumScaleFactor = 0F
+    private var animationSmallScaleFactor = 0F
+    private var animationInvisibleScaleFactor = 0F
+    private var animationColor = 0
+    private var animationColorReverse = 0
+    private var reverseAnimation = false
+    private var scrollableIndication = false
 
     init {
         context.theme.obtainStyledAttributes(
@@ -158,6 +161,10 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         viewWidth = width - viewPaddingStart - viewPaddingEnd
         viewHeight = height - viewPaddingTop - viewPaddingBottom
 
+        if (!indicatorCalculator.calculated) {
+            indicatorCalculator.calculate()
+        }
+
         for (position: Int in 0 until dotCount) {
             canvas.drawCircle(
                     indicatorCalculator.indicator(position).x,
@@ -173,13 +180,12 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
         reverseAnimation = position < selectedPosition
-        canScroll = position == cursorStart -1 || position == cursorEnd
+        bias += selectedPosition - position
         animator.currentPlayTime = (animationDuration * positionOffset).toLong()
     }
 
     override fun onPageSelected(position: Int) {
         selectedPosition = position
-        scroll()
     }
 
     fun setupWithViewPager(viewPager: ViewPager) {
@@ -227,21 +233,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         animator.addUpdateListener { animation -> updateView(animation) }
     }
 
-    private fun scroll() {
-        val bias = when {
-            selectedPosition > cursorEnd -> selectedPosition - cursorEnd
-            selectedPosition < cursorStart -> selectedPosition - cursorStart
-            else -> 0
-        }
-
-        if (bias == 0) {
-            return
-        }
-
-        cursorStart += bias
-        cursorEnd += bias
-    }
-
     private fun updateView(animation: ValueAnimator) {
         animationMoveFactor = if (reverseAnimation && selectedPosition == cursorStart) {
             animation.getAnimatedValue(keyPropertyMoveFactor) as Float - dotSpace
@@ -251,11 +242,9 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
             0F
         }
 
-        if (canScroll) {
-            animationMediumScaleFactor = animation.getAnimatedValue(keyPropertyMediumScaleFactor) as Float
-            animationSmallScaleFactor = animation.getAnimatedValue(keyPropertySmallScaleFactor) as Float
-            animationInvisibleScaleFactor = animation.getAnimatedValue(keyPropertyInvisibleScaleFactor) as Float
-        }
+        animationMediumScaleFactor = animation.getAnimatedValue(keyPropertyMediumScaleFactor) as Float
+        animationSmallScaleFactor = animation.getAnimatedValue(keyPropertySmallScaleFactor) as Float
+        animationInvisibleScaleFactor = animation.getAnimatedValue(keyPropertyInvisibleScaleFactor) as Float
 
         animationColor = animation.getAnimatedValue(keyPropertyColor) as Int
         animationColorReverse = animation.getAnimatedValue(keyPropertyColorReverse) as Int
@@ -265,18 +254,36 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     private inner class IndicatorCalculator {
 
+        private var xCoordinates = floatArrayOf()
+        var cursorStartX = 0F
+        var cursorEndX = 0F
+        var calculated = false
+
+        fun calculate() {
+            xCoordinates = FloatArray(dotCount)
+            for (position: Int in 0 until xCoordinates.size) {
+                xCoordinates[position] = (viewWidth / (dotCount + 1) * (position + 1)).toFloat()
+            }
+            calculated = true
+
+            cursorStartX = xCoordinates[2]
+            cursorEndX = xCoordinates[dotCount - 3]
+            println("${Arrays.toString(xCoordinates)}\nStart = $cursorStartX\nEnd = $cursorEndX")
+        }
+
         fun indicator(position: Int): Indicator {
             val x = viewPaddingStart - animationMoveFactor +
                     if (scrollableIndication) {
-                        when {
-                            cursorStart == 0 -> (viewWidth / (dotCount + 1) * (position + 3)).toFloat()
-                            cursorStart == 1 -> (viewWidth / (dotCount + 1) * (position + 2)).toFloat()
-                            cursorEnd == totalDotCount - 1 -> (viewWidth / (dotCount + 1) * (position - 1)).toFloat()
-                            cursorEnd == totalDotCount - 2 -> (viewWidth / (dotCount + 1) * position).toFloat()
-                            else -> (viewWidth / (dotCount + 1) * (position + 1)).toFloat()
-                        }
+                        xCoordinates[position]
+
+//                        cursorStart == 0 -> (viewWidth / (dotCount + 1) * (position + 3)).toFloat()
+//                        cursorStart == 1 -> (viewWidth / (dotCount + 1) * (position + 2)).toFloat()
+//                        cursorEnd == totalDotCount - 1 -> (viewWidth / (dotCount + 1) * (position - 1)).toFloat()
+//                        cursorEnd == totalDotCount - 2 -> (viewWidth / (dotCount + 1) * position).toFloat()
+//                        else -> (viewWidth / (dotCount + 1) * (position + 1)).toFloat()
+
                     } else {
-                        (viewWidth / (dotCount + 1) * (position + 1)).toFloat()
+                        xCoordinates[position]
                     }
 
             val y = (height / 2).toFloat()
