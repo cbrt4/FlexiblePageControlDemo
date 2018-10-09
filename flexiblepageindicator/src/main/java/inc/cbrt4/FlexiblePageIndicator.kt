@@ -19,7 +19,6 @@ import inc.cbrt4.flexiblepageindicator.R
 class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(context, attrs), OnPageChangeListener {
 
     companion object {
-        const val tag = "FlexiblePageIndicator"
         const val keyPropertyMoveFactor = "animationMoveFactor"
         const val keyPropertyColor = "color"
         const val keyPropertyColorReverse = "colorReverse"
@@ -145,7 +144,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
             indicatorCalculator.calculate()
         }
 
-        for (position: Int in 0 until dotCount) {
+        for (position: Int in 0 until totalDotCount) {
             canvas.drawCircle(
                     indicatorCalculator.indicator(position).x,
                     indicatorCalculator.indicator(position).y,
@@ -213,11 +212,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         }
 
         bias -= correction
-
-        println("Selected position = $selectedPosition" +
-                "\nStart = ${indicatorCalculator.cursorStartPosition - bias}" +
-                "\nEnd = ${indicatorCalculator.cursorEndPosition - bias}" +
-                "\nBias = $bias")
     }
 
     private fun updateView(animation: ValueAnimator) {
@@ -239,21 +233,18 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
         val cursorStartPosition = 2
         val cursorEndPosition = dotCount - 3
+        val cursorStartX = (0.5F + cursorStartPosition) * dotSpace
+        val cursorEndX = (0.5F + cursorEndPosition) * dotSpace
 
-        private var xCoordinates = floatArrayOf()
-        var cursorStartX = 0F
-        var cursorEndX = 0F
         var calculated = false
+        private var xCoordinates = floatArrayOf()
 
         fun calculate() {
             xCoordinates = FloatArray(dotCount)
             for (position: Int in 0 until xCoordinates.size) {
-                xCoordinates[position] = viewWidth / (dotCount + 1) * (position + 1)
+                xCoordinates[position] = viewWidth / dotCount * position + dotSpace / 2
             }
             calculated = true
-
-            cursorStartX = xCoordinates[2]
-            cursorEndX = xCoordinates[dotCount - 2]
         }
 
         fun indicator(position: Int): Indicator {
@@ -264,7 +255,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                         if (position + bias in 0 until dotCount) {
                             xCoordinates[position + bias]
                         } else {
-                            0F
+                            //ToDo fix here
+                            viewWidth * 2
                         }
                     } else {
                         xCoordinates[position]
@@ -275,10 +267,10 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
             indicator.radius =
                     when {
                         indicator.x < cursorStartX ->
-                            dotSize * (indicator.x / cursorStartX)/ 2
+                            dotSize * (indicator.x / cursorStartX) / 2
 
                         indicator.x > cursorEndX ->
-                            dotSize * ((viewWidth - indicator.x) / cursorStartX) / 2
+                            dotSize * ((viewWidth - indicator.x) / (viewWidth - cursorEndX)) / 2
 
                         else -> dotSize / 2
                     }
