@@ -167,6 +167,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         scroll()
     }
 
+
+
     fun setupWithViewPager(viewPager: ViewPager) {
         viewPager.adapter?.let {
             totalDotCount = it.count
@@ -292,6 +294,12 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
             }
 
             return indicator
+        }
+    }
+
+    private inner class PagerManager() {
+        fun dispatchTouchEvent() {
+
         }
     }
 
