@@ -13,18 +13,19 @@
 
 
     <FrameLayout
-        android:background="@color/colorPrimary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true">
+        android:layout_centerHorizontal="true"
+        android:background="@color/colorPrimary">
 
         <inc.cbrt4.FlexiblePageIndicator
             android:id="@+id/pageIndicator"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
             android:layout_gravity="center"
+            android:layout_margin="16dp"
+            app:animationDuration="1000"
             app:dotColorDefault="#80000000"
             app:dotColorSelected="#80FFFFFF"
             app:dotCount="7"
