@@ -45,6 +45,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var dotCount = 0
     private var dotSize = 0F
     private var dotSpace = 0F
+    private var pageNavigationEnabled = false
 
     private var totalDotCount = 0
     private var bias = 2
@@ -53,6 +54,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var animationMoveFactor = 0F
     private var animationColor = 0
     private var animationColorReverse = 0
+    private var pageOffset = 0F
     private var reverseAnimation = false
     private var scrollableIndication = false
 
@@ -78,14 +80,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 dotDefaultColor = getColor(R.styleable.FlexiblePageIndicator_dotColorDefault, Color.GRAY)
                 dotSelectedColor = getColor(R.styleable.FlexiblePageIndicator_dotColorSelected, Color.BLUE)
 
-                dotSelectedPaint.isAntiAlias = true
-                dotUnselectedPaint.isAntiAlias = true
-                dotDefaultPaint.isAntiAlias = true
-
-                dotSelectedPaint.color = dotSelectedColor
-                dotUnselectedPaint.color = dotDefaultColor
-                dotDefaultPaint.color = dotDefaultColor
-
                 dotCount = getInteger(R.styleable.FlexiblePageIndicator_dotCount, defaultDotCount)
 
                 dotSize = getDimension(R.styleable.FlexiblePageIndicator_dotSize, resources.getDimension(R.dimen.dot_size_default))
@@ -95,13 +89,12 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                     dotSpace = 2 * dotSize
                 }
 
-                cursorStartPosition = 2
-                cursorEndPosition = dotCount - 3
-                cursorStartX = (0.5F + cursorStartPosition) * dotSpace
-                cursorEndX = (0.5F + cursorEndPosition) * dotSpace
+                pageNavigationEnabled = getBoolean(R.styleable.FlexiblePageIndicator_pageNavigationEnabled, true)
 
                 animator = ValueAnimator()
 
+                setupPaint()
+                setupCursor()
                 setupAnimations()
 
             } finally {
@@ -113,7 +106,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     @SuppressLint("SwitchIntDef")
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
 
-        fixPadding()
+        setupPadding()
 
         val contentWidth = dotCount * dotSpace
         val contentHeight = dotSpace
@@ -154,16 +147,18 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        event?.let {
-            if (it.actionMasked == MotionEvent.ACTION_DOWN) {
-                return true
-            }
+        if (pageNavigationEnabled) {
+            event?.let {
+                if (it.actionMasked == MotionEvent.ACTION_DOWN) {
+                    return true
+                }
 
-            if (it.actionMasked == MotionEvent.ACTION_UP) {
-                for (position: Int in 0 until dotCount) {
-                    if (it.x in xCoordinates[position] - dotSpace / 2..xCoordinates[position] + dotSpace / 2) {
-                        viewPager?.currentItem = position - bias
-                        return true
+                if (it.actionMasked == MotionEvent.ACTION_UP) {
+                    for (position: Int in 0 until dotCount) {
+                        if (it.x in xCoordinates[position] - dotSize / 2..xCoordinates[position] + dotSize / 2) {
+                            viewPager?.currentItem = position - bias
+                            return true
+                        }
                     }
                 }
             }
@@ -177,6 +172,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
         reverseAnimation = position < selectedPosition
+        pageOffset = positionOffset
         animator.currentPlayTime = (animationDuration * positionOffset).toLong()
     }
 
@@ -203,7 +199,24 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         }
     }
 
-    private fun fixPadding() {
+    private fun setupPaint() {
+        dotSelectedPaint.isAntiAlias = true
+        dotUnselectedPaint.isAntiAlias = true
+        dotDefaultPaint.isAntiAlias = true
+
+        dotSelectedPaint.color = dotSelectedColor
+        dotUnselectedPaint.color = dotDefaultColor
+        dotDefaultPaint.color = dotDefaultColor
+    }
+
+    private fun setupCursor() {
+        cursorStartPosition = 2
+        cursorEndPosition = dotCount - 3
+        cursorStartX = (0.5F + cursorStartPosition) * dotSpace
+        cursorEndX = (0.5F + cursorEndPosition) * dotSpace
+    }
+
+    private fun setupPadding() {
         viewPaddingTop = paddingTop
         viewPaddingBottom = paddingBottom
         viewPaddingStart = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {

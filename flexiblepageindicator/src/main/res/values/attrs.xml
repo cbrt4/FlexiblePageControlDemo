@@ -6,5 +6,6 @@
         <attr name="dotCount" format="integer" />
         <attr name="dotSize" format="dimension" />
         <attr name="dotSpace" format="dimension" />
+        <attr name="pageNavigationEnabled" format="boolean" />
     </declare-styleable>
 </resources>
