@@ -12,6 +12,7 @@ import android.os.Build
 import android.support.v4.view.ViewPager
 import android.support.v4.view.ViewPager.OnPageChangeListener
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import inc.cbrt4.flexiblepageindicator.R
@@ -55,8 +56,17 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var reverseAnimation = false
     private var scrollableIndication = false
 
+    private var cursorStartPosition = 0
+    private var cursorEndPosition = 0
+    private var cursorStartX = 0F
+    private var cursorEndX = 0F
+
+    private var calculated = false
+    private var xCoordinates = floatArrayOf()
+
+    private var viewPager: ViewPager? = null
+
     private lateinit var animator: ValueAnimator
-    private lateinit var indicatorCalculator: IndicatorCalculator
 
     init {
         context.theme.obtainStyledAttributes(
@@ -85,8 +95,12 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                     dotSpace = 2 * dotSize
                 }
 
+                cursorStartPosition = 2
+                cursorEndPosition = dotCount - 3
+                cursorStartX = (0.5F + cursorStartPosition) * dotSpace
+                cursorEndX = (0.5F + cursorEndPosition) * dotSpace
+
                 animator = ValueAnimator()
-                indicatorCalculator = IndicatorCalculator()
 
                 setupAnimations()
 
@@ -99,18 +113,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     @SuppressLint("SwitchIntDef")
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
 
-        viewPaddingTop = paddingTop
-        viewPaddingBottom = paddingBottom
-        viewPaddingStart = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            paddingStart
-        } else {
-            paddingLeft
-        }
-        viewPaddingEnd = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            paddingEnd
-        } else {
-            paddingRight
-        }
+        fixPadding()
 
         val contentWidth = dotCount * dotSpace
         val contentHeight = dotSpace
@@ -140,17 +143,32 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         viewWidth = (width - viewPaddingStart - viewPaddingEnd).toFloat()
         viewHeight = (height - viewPaddingTop - viewPaddingBottom).toFloat()
 
-        if (!indicatorCalculator.calculated) {
-            indicatorCalculator.calculate()
+        if (!calculated) {
+            calculate()
         }
 
         for (position: Int in 0 until totalDotCount) {
-            canvas.drawCircle(
-                    indicatorCalculator.indicator(position).x,
-                    indicatorCalculator.indicator(position).y,
-                    indicatorCalculator.indicator(position).radius,
-                    indicatorCalculator.indicator(position).paint)
+            drawIndicator(canvas, position)
         }
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        event?.let {
+            if (it.actionMasked == MotionEvent.ACTION_DOWN) {
+                return true
+            }
+
+            if (it.actionMasked == MotionEvent.ACTION_UP) {
+                for (position: Int in 0 until dotCount) {
+                    if (it.x in xCoordinates[position] - dotSpace / 2..xCoordinates[position] + dotSpace / 2) {
+                        viewPager?.currentItem = position - bias
+                        return true
+                    }
+                }
+            }
+        }
+        return false
     }
 
     override fun onPageScrollStateChanged(state: Int) {
@@ -167,9 +185,10 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         scroll()
     }
 
-
-
     fun setupWithViewPager(viewPager: ViewPager) {
+
+        this.viewPager = viewPager
+
         viewPager.adapter?.let {
             totalDotCount = it.count
             selectedPosition = viewPager.currentItem
@@ -181,6 +200,21 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
             }
 
             viewPager.addOnPageChangeListener(this)
+        }
+    }
+
+    private fun fixPadding() {
+        viewPaddingTop = paddingTop
+        viewPaddingBottom = paddingBottom
+        viewPaddingStart = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            paddingStart
+        } else {
+            paddingLeft
+        }
+        viewPaddingEnd = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            paddingEnd
+        } else {
+            paddingRight
         }
     }
 
@@ -202,24 +236,64 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         animator.addUpdateListener { animation -> updateView(animation) }
     }
 
-    private fun scroll() {
-        val correction = when {
-            selectedPosition > indicatorCalculator.cursorEndPosition - bias ->
-                selectedPosition - indicatorCalculator.cursorEndPosition + bias
+    private fun calculate() {
+        xCoordinates = FloatArray(dotCount)
+        for (position: Int in 0 until xCoordinates.size) {
+            xCoordinates[position] = viewWidth / dotCount * position + dotSpace / 2
+        }
+        calculated = true
+    }
 
-            selectedPosition < indicatorCalculator.cursorStartPosition - bias ->
-                selectedPosition - indicatorCalculator.cursorStartPosition + bias
+    private fun drawIndicator(canvas: Canvas, position: Int) {
 
-            else -> 0
+        val x = viewPaddingStart - animationMoveFactor +
+                if (scrollableIndication) {
+                    if (position + bias in 0 until dotCount) {
+                        xCoordinates[position + bias]
+                    } else {
+                        //ToDo fix here
+                        viewWidth * 2
+                    }
+                } else {
+                    xCoordinates[position]
+                }
+
+        val y = (height / 2).toFloat()
+
+        val radius =
+                when {
+                    x < cursorStartX ->
+                        dotSize * (x / cursorStartX) / 2
+
+                    x > cursorEndX ->
+                        dotSize * ((viewWidth - x) / (viewWidth - cursorEndX)) / 2
+
+                    else -> dotSize / 2
+                }
+
+        dotSelectedPaint.color = animationColor
+        dotUnselectedPaint.color = animationColorReverse
+        val paint = if (reverseAnimation) {
+            when (position) {
+                selectedPosition - 1 -> dotSelectedPaint
+                selectedPosition -> dotUnselectedPaint
+                else -> dotDefaultPaint
+            }
+        } else {
+            when (position) {
+                selectedPosition -> dotSelectedPaint
+                selectedPosition + 1 -> dotUnselectedPaint
+                else -> dotDefaultPaint
+            }
         }
 
-        bias -= correction
+        canvas.drawCircle(x, y, radius, paint)
     }
 
     private fun updateView(animation: ValueAnimator) {
-        animationMoveFactor = if (reverseAnimation && selectedPosition == indicatorCalculator.cursorStartPosition - bias) {
+        animationMoveFactor = if (reverseAnimation && selectedPosition == cursorStartPosition - bias) {
             animation.getAnimatedValue(keyPropertyMoveFactor) as Float - dotSpace
-        } else if (!reverseAnimation && selectedPosition == indicatorCalculator.cursorEndPosition - bias) {
+        } else if (!reverseAnimation && selectedPosition == cursorEndPosition - bias) {
             animation.getAnimatedValue(keyPropertyMoveFactor) as Float
         } else {
             0F
@@ -231,82 +305,17 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         invalidate()
     }
 
-    private inner class IndicatorCalculator {
+    private fun scroll() {
+        val correction = when {
+            selectedPosition > cursorEndPosition - bias ->
+                selectedPosition - cursorEndPosition + bias
 
-        val cursorStartPosition = 2
-        val cursorEndPosition = dotCount - 3
-        val cursorStartX = (0.5F + cursorStartPosition) * dotSpace
-        val cursorEndX = (0.5F + cursorEndPosition) * dotSpace
+            selectedPosition < cursorStartPosition - bias ->
+                selectedPosition - cursorStartPosition + bias
 
-        var calculated = false
-        private var xCoordinates = floatArrayOf()
-
-        fun calculate() {
-            xCoordinates = FloatArray(dotCount)
-            for (position: Int in 0 until xCoordinates.size) {
-                xCoordinates[position] = viewWidth / dotCount * position + dotSpace / 2
-            }
-            calculated = true
+            else -> 0
         }
 
-        fun indicator(position: Int): Indicator {
-            val indicator = Indicator()
-
-            indicator.x = viewPaddingStart - animationMoveFactor +
-                    if (scrollableIndication) {
-                        if (position + bias in 0 until dotCount) {
-                            xCoordinates[position + bias]
-                        } else {
-                            //ToDo fix here
-                            viewWidth * 2
-                        }
-                    } else {
-                        xCoordinates[position]
-                    }
-
-            indicator.y = (height / 2).toFloat()
-
-            indicator.radius =
-                    when {
-                        indicator.x < cursorStartX ->
-                            dotSize * (indicator.x / cursorStartX) / 2
-
-                        indicator.x > cursorEndX ->
-                            dotSize * ((viewWidth - indicator.x) / (viewWidth - cursorEndX)) / 2
-
-                        else -> dotSize / 2
-                    }
-
-            dotSelectedPaint.color = animationColor
-            dotUnselectedPaint.color = animationColorReverse
-            indicator.paint = if (reverseAnimation) {
-                when (position) {
-                    selectedPosition - 1 -> dotSelectedPaint
-                    selectedPosition -> dotUnselectedPaint
-                    else -> dotDefaultPaint
-                }
-            } else {
-                when (position) {
-                    selectedPosition -> dotSelectedPaint
-                    selectedPosition + 1 -> dotUnselectedPaint
-                    else -> dotDefaultPaint
-                }
-            }
-
-            return indicator
-        }
-    }
-
-    private inner class PagerManager() {
-        fun dispatchTouchEvent() {
-
-        }
-    }
-
-    private inner class Indicator {
-        var x = 0F
-        var y = 0F
-        var radius = 0F
-        var paint = Paint()
+        bias -= correction
     }
 }
