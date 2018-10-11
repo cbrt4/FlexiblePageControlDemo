@@ -50,7 +50,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var animationMoveFactor = 0F
     private var animationColor = 0
     private var animationColorReverse = 0
-    private var animationCurrentPlayTime = 0L
     private var reverseAnimation = false
     private var scrollableIndication = false
 
@@ -167,9 +166,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-        reverseAnimation = position < selectedPosition
-        animationCurrentPlayTime = (animationDuration * positionOffset).toLong()
-        animator?.currentPlayTime = animationCurrentPlayTime
+        pageScrolled(position, positionOffset)
     }
 
     override fun onPageSelected(position: Int) {
@@ -221,10 +218,10 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 PropertyValuesHolder.ofFloat(keyPropertyMoveFactor, 0F, dotSpace)
 
         val propertyColor =
-                PropertyValuesHolder.ofObject(keyPropertyColor, ArgbEvaluator(), dotSelectedColor, dotDefaultColor)
+                PropertyValuesHolder.ofObject(keyPropertyColor, ArgbEvaluator(), dotDefaultColor, dotSelectedColor)
 
         val propertyColorReverse =
-                PropertyValuesHolder.ofObject(keyPropertyColorReverse, ArgbEvaluator(), dotDefaultColor, dotSelectedColor)
+                PropertyValuesHolder.ofObject(keyPropertyColorReverse, ArgbEvaluator(), dotSelectedColor, dotDefaultColor)
 
         animator?.let {
             it.setValues(propertyMoveForwardFactor,
@@ -275,28 +272,31 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
         val paint = Paint()
         paint.isAntiAlias = true
-        paint.color = when (position) {
-            selectedPosition -> dotSelectedColor
-            else -> dotDefaultColor
-        }
+        paint.color =
+                when (position) {
+                    selectedPosition -> dotSelectedColor
+                    else -> dotDefaultColor
+                }
 
         canvas.drawCircle(x, y, radius, paint)
     }
 
     private fun updateView(animation: ValueAnimator) {
         animationMoveFactor =
-                if (reverseAnimation && selectedPosition == cursorStartPosition - bias) {
-                    animation.getAnimatedValue(keyPropertyMoveFactor) as Float - dotSpace
-                } else if (!reverseAnimation && selectedPosition == cursorEndPosition - bias) {
-                    animation.getAnimatedValue(keyPropertyMoveFactor) as Float
-                } else {
-                    0F
+                when {
+                    reverseAnimation -> animation.getAnimatedValue(keyPropertyMoveFactor) as Float - dotSpace
+                    else -> animation.getAnimatedValue(keyPropertyMoveFactor) as Float
                 }
 
         animationColor = animation.getAnimatedValue(keyPropertyColor) as Int
         animationColorReverse = animation.getAnimatedValue(keyPropertyColorReverse) as Int
 
         invalidate()
+    }
+
+    private fun pageScrolled(position: Int, positionOffset: Float) {
+        reverseAnimation = position < selectedPosition
+        animator?.currentPlayTime = (animationDuration * positionOffset).toLong()
     }
 
     private fun pageSelected(position: Int) {
