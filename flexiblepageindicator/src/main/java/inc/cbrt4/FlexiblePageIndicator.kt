@@ -6,7 +6,6 @@ import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.os.Build
 import android.support.v4.view.ViewPager
@@ -23,6 +22,9 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         const val keyPropertyMoveFactor = "animationMoveFactor"
         const val keyPropertyColor = "color"
         const val keyPropertyColorReverse = "colorReverse"
+
+        const val colorDefault = -0x80000000
+        const val colorSelected = -0x333334
 
         const val defaultDotCount = 7
     }
@@ -71,13 +73,19 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 0,
                 0).apply {
             try {
-                dotDefaultColor = getColor(R.styleable.FlexiblePageIndicator_dotColorDefault, Color.GRAY)
-                dotSelectedColor = getColor(R.styleable.FlexiblePageIndicator_dotColorSelected, Color.BLUE)
+                dotDefaultColor = getColor(R.styleable.FlexiblePageIndicator_dotColorDefault,
+                        colorDefault)
+
+                dotSelectedColor = getColor(R.styleable.FlexiblePageIndicator_dotColorSelected,
+                        colorSelected)
 
                 dotCount = getInteger(R.styleable.FlexiblePageIndicator_dotCount, defaultDotCount)
 
-                dotSize = getDimension(R.styleable.FlexiblePageIndicator_dotSize, resources.getDimension(R.dimen.dot_size_default))
-                dotSpace = getDimension(R.styleable.FlexiblePageIndicator_dotSpace, resources.getDimension(R.dimen.dot_space_default))
+                dotSize = getDimension(R.styleable.FlexiblePageIndicator_dotSize,
+                        resources.getDimension(R.dimen.dot_size_default))
+
+                dotSpace = getDimension(R.styleable.FlexiblePageIndicator_dotSpace,
+                        resources.getDimension(R.dimen.dot_space_default))
 
                 if (dotSpace <= dotSize) {
                     dotSpace = 2 * dotSize
@@ -229,7 +237,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                     propertyColorReverse)
             it.interpolator = AccelerateDecelerateInterpolator()
             it.duration = animationDuration
-            it.addUpdateListener { animation -> updateView(animation) }
+            it.addUpdateListener { animation -> updateValues(animation) }
         }
     }
 
@@ -281,7 +289,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         canvas.drawCircle(x, y, radius, paint)
     }
 
-    private fun updateView(animation: ValueAnimator) {
+    private fun updateValues(animation: ValueAnimator) {
         animationMoveFactor =
                 when {
                     reverseAnimation -> animation.getAnimatedValue(keyPropertyMoveFactor) as Float - dotSpace
@@ -306,16 +314,17 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     private fun fixBias() {
-        val correction = when {
-            selectedPosition > cursorEndPosition - bias ->
-                selectedPosition - cursorEndPosition + bias
+        val fix =
+                when {
+                    selectedPosition > cursorEndPosition - bias ->
+                        selectedPosition - cursorEndPosition + bias
 
-            selectedPosition < cursorStartPosition - bias ->
-                selectedPosition - cursorStartPosition + bias
+                    selectedPosition < cursorStartPosition - bias ->
+                        selectedPosition - cursorStartPosition + bias
 
-            else -> 0
-        }
+                    else -> 0
+                }
 
-        bias -= correction
+        bias -= fix
     }
 }
