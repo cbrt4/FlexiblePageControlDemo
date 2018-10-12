@@ -47,13 +47,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     private var totalDotCount = 0
     private var bias = 2
-    private var previousSelectedPosition = -1
     private var selectedPosition = 0
     private var animationMoveFactor = 0F
     private var animationColor = 0
     private var animationColorReverse = 0
     private var reverseAnimation = false
     private var scrollableIndication = false
+    private var canScroll = false
 
     private var cursorStartPosition = 0
     private var cursorEndPosition = 0
@@ -249,6 +249,23 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         calculated = true
     }
 
+    private fun updateValues(animation: ValueAnimator) {
+        animationMoveFactor =
+                if (canScroll) {
+                    when {
+                        reverseAnimation -> -(animation.getAnimatedValue(keyPropertyMoveFactor) as Float)
+                        else -> animation.getAnimatedValue(keyPropertyMoveFactor) as Float
+                    }
+                } else {
+                    0F
+                }
+
+        animationColor = animation.getAnimatedValue(keyPropertyColor) as Int
+        animationColorReverse = animation.getAnimatedValue(keyPropertyColorReverse) as Int
+
+        invalidate()
+    }
+
     private fun drawIndicator(canvas: Canvas, position: Int) {
 
         val x = viewPaddingStart - animationMoveFactor +
@@ -290,19 +307,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         canvas.drawCircle(x, y, radius, paint)
     }
 
-    private fun updateValues(animation: ValueAnimator) {
-        animationMoveFactor =
-                when {
-                    reverseAnimation -> -(animation.getAnimatedValue(keyPropertyMoveFactor) as Float)
-                    else -> animation.getAnimatedValue(keyPropertyMoveFactor) as Float
-                }
-
-        animationColor = animation.getAnimatedValue(keyPropertyColor) as Int
-        animationColorReverse = animation.getAnimatedValue(keyPropertyColorReverse) as Int
-
-        invalidate()
-    }
-
     private fun pageScrolled(position: Int, positionOffset: Float) {
         reverseAnimation = position < selectedPosition
         animator?.currentPlayTime =
@@ -314,7 +318,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     private fun pageSelected(position: Int) {
-        previousSelectedPosition = selectedPosition
         selectedPosition = position
         fixBias()
     }
@@ -331,10 +334,14 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                     else -> 0
                 }
 
-        bias -= fix
+        canScroll = fix != 0
+
+        if (canScroll) {
+            bias -= fix
+        }
     }
 
     private fun setCurrentItem(position: Int) {
-        viewPager?.currentItem = position - bias
+        viewPager?.currentItem = position
     }
 }

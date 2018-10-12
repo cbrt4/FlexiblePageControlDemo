@@ -25,8 +25,8 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_margin="16dp"
-            app:dotSize="8dp"
-            app:dotSpace="12dp" />
+            app:dotSize="12dp"
+            app:dotSpace="18dp" />
     </FrameLayout>
 
 </RelativeLayout>
