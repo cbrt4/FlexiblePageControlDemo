@@ -15,6 +15,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import inc.cbrt4.flexiblepageindicator.R
+import kotlin.math.sqrt
 
 class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(context, attrs), OnPageChangeListener {
 
@@ -245,10 +246,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         xCoordinates = FloatArray(dotCount)
         for (position: Int in 0 until xCoordinates.size) {
             xCoordinates[position] = viewPaddingStart + viewWidth / dotCount * position + dotSpace / 2
-            println(xCoordinates[position])
         }
         calculated = true
-        println(viewWidth)
     }
 
     private fun updateValues(animation: ValueAnimator) {
@@ -289,10 +288,10 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                     x < -animationMoveFactor -> 0F
 
                     x < cursorStartX ->
-                        dotSize * ((x - viewPaddingStart) / (cursorStartX - viewPaddingStart)) / 2
+                        dotSize * sqrt((x - viewPaddingStart) / (cursorStartX - viewPaddingStart)) / 2
 
                     x > cursorEndX ->
-                        dotSize * ((viewPaddingStart + viewWidth - x) / (viewPaddingStart + viewWidth - cursorEndX)) / 2
+                        dotSize * sqrt((viewPaddingStart + viewWidth - x) / (viewPaddingStart + viewWidth - cursorEndX)) / 2
 
                     else -> dotSize / 2
                 }
@@ -344,6 +343,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     private fun setCurrentItem(position: Int) {
-        viewPager?.currentItem = position
+        viewPager?.setCurrentItem(position, true)
     }
 }
