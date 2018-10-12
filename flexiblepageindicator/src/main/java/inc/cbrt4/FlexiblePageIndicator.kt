@@ -97,7 +97,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
                 animator = ValueAnimator()
 
-                setupCursor()
                 setupAnimations()
 
             } finally {
@@ -110,6 +109,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
 
         setupPadding()
+        setupCursor()
 
         val contentWidth = dotCount * dotSpace
         val contentHeight = dotSpace
@@ -131,7 +131,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
             else -> contentHeight.toInt()
         }
 
-        setMeasuredDimension(width + viewPaddingStart + viewPaddingEnd, height + paddingTop + paddingBottom)
+        setMeasuredDimension(width + viewPaddingStart + viewPaddingEnd, height + viewPaddingTop + viewPaddingBottom)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -199,28 +199,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         }
     }
 
-    private fun setupCursor() {
-        cursorStartPosition = 2
-        cursorEndPosition = dotCount - 3
-        cursorStartX = (0.5F + cursorStartPosition) * dotSpace
-        cursorEndX = (0.5F + cursorEndPosition) * dotSpace
-    }
-
-    private fun setupPadding() {
-        viewPaddingTop = paddingTop
-        viewPaddingBottom = paddingBottom
-        viewPaddingStart = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            paddingStart
-        } else {
-            paddingLeft
-        }
-        viewPaddingEnd = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            paddingEnd
-        } else {
-            paddingRight
-        }
-    }
-
     private fun setupAnimations() {
         val propertyMoveForwardFactor =
                 PropertyValuesHolder.ofFloat(keyPropertyMoveFactor, 0F, dotSpace)
@@ -241,12 +219,36 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         }
     }
 
+    private fun setupPadding() {
+        viewPaddingTop = paddingTop
+        viewPaddingBottom = paddingBottom
+        viewPaddingStart = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            paddingStart
+        } else {
+            paddingLeft
+        }
+        viewPaddingEnd = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            paddingEnd
+        } else {
+            paddingRight
+        }
+    }
+
+    private fun setupCursor() {
+        cursorStartPosition = 2
+        cursorEndPosition = dotCount - 3
+        cursorStartX = viewPaddingStart + (0.5F + cursorStartPosition) * dotSpace
+        cursorEndX = viewPaddingStart + (0.5F + cursorEndPosition) * dotSpace
+    }
+
     private fun calculate() {
         xCoordinates = FloatArray(dotCount)
         for (position: Int in 0 until xCoordinates.size) {
-            xCoordinates[position] = viewWidth / dotCount * position + dotSpace / 2
+            xCoordinates[position] = viewPaddingStart + viewWidth / dotCount * position + dotSpace / 2
+            println(xCoordinates[position])
         }
         calculated = true
+        println(viewWidth)
     }
 
     private fun updateValues(animation: ValueAnimator) {
@@ -268,7 +270,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     private fun drawIndicator(canvas: Canvas, position: Int) {
 
-        val x = viewPaddingStart - animationMoveFactor +
+        val x = -animationMoveFactor +
                 if (scrollableIndication) {
                     when {
                         position + bias in 0 until dotCount -> xCoordinates[position + bias]
@@ -284,13 +286,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
         val radius =
                 when {
-                    x < viewPaddingStart - animationMoveFactor -> 0F
+                    x < -animationMoveFactor -> 0F
 
                     x < cursorStartX ->
-                        dotSize * (x / cursorStartX) / 2
+                        dotSize * ((x - viewPaddingStart) / (cursorStartX - viewPaddingStart)) / 2
 
                     x > cursorEndX ->
-                        dotSize * ((viewWidth - x) / (viewWidth - cursorEndX)) / 2
+                        dotSize * ((viewPaddingStart + viewWidth - x) / (viewPaddingStart + viewWidth - cursorEndX)) / 2
 
                     else -> dotSize / 2
                 }
