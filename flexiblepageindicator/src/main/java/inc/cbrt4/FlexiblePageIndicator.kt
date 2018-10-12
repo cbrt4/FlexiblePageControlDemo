@@ -159,7 +159,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 if (it.actionMasked == MotionEvent.ACTION_UP) {
                     for (position: Int in 0 until dotCount) {
                         if (it.x in xCoordinates[position] - (dotSize + dotSpace) / 4..xCoordinates[position] + (dotSize + dotSpace) / 4) {
-                            viewPager?.currentItem = position - bias
+                            setCurrentItem(position - bias)
                             return true
                         }
                     }
@@ -280,11 +280,12 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
         val paint = Paint()
         paint.isAntiAlias = true
-        paint.color =
-                when (position) {
-                    selectedPosition -> dotSelectedColor
-                    else -> dotDefaultColor
-                }
+        paint.color = when {
+            reverseAnimation && position == selectedPosition - 1 -> animationColor
+            !reverseAnimation && position == selectedPosition + 1 -> animationColor
+            position == selectedPosition -> animationColorReverse
+            else -> dotDefaultColor
+        }
 
         canvas.drawCircle(x, y, radius, paint)
     }
@@ -292,7 +293,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private fun updateValues(animation: ValueAnimator) {
         animationMoveFactor =
                 when {
-                    reverseAnimation -> animation.getAnimatedValue(keyPropertyMoveFactor) as Float - dotSpace
+                    reverseAnimation -> -(animation.getAnimatedValue(keyPropertyMoveFactor) as Float)
                     else -> animation.getAnimatedValue(keyPropertyMoveFactor) as Float
                 }
 
@@ -304,7 +305,12 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     private fun pageScrolled(position: Int, positionOffset: Float) {
         reverseAnimation = position < selectedPosition
-        animator?.currentPlayTime = (animationDuration * positionOffset).toLong()
+        animator?.currentPlayTime =
+                if (reverseAnimation) {
+                    (animationDuration * (1 - positionOffset)).toLong()
+                } else {
+                    (animationDuration * positionOffset).toLong()
+                }
     }
 
     private fun pageSelected(position: Int) {
@@ -326,5 +332,9 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 }
 
         bias -= fix
+    }
+
+    private fun setCurrentItem(position: Int) {
+        viewPager?.currentItem = position - bias
     }
 }
