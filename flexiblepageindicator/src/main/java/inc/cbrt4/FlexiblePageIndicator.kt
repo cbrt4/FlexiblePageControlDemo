@@ -163,7 +163,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     override fun onPageSelected(position: Int) {
-        pageSelected(position)
+        //todo
+//        pageSelected(position)
     }
 
     fun setupWithViewPager(viewPager: ViewPager) {
@@ -300,6 +301,10 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 } else {
                     (animationDuration * positionOffset).toLong()
                 }
+        //todo
+        if (positionOffset == 0F) {
+            pageSelected(position)
+        }
     }
 
     private fun pageSelected(position: Int) {
