@@ -163,8 +163,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     override fun onPageSelected(position: Int) {
-        //todo
-//        pageSelected(position)
+        pageSelected(position)
     }
 
     fun setupWithViewPager(viewPager: ViewPager) {
@@ -294,17 +293,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     private fun pageScrolled(position: Int, positionOffset: Float) {
-        reverseAnimation = position < selectedPosition
+        reverseAnimation = position < selectedPosition && positionOffset != 0F
         animator?.currentPlayTime =
                 if (reverseAnimation) {
                     (animationDuration * (1 - positionOffset)).toLong()
                 } else {
                     (animationDuration * positionOffset).toLong()
                 }
-        //todo
-        if (positionOffset == 0F) {
-            pageSelected(position)
-        }
     }
 
     private fun pageSelected(position: Int) {
