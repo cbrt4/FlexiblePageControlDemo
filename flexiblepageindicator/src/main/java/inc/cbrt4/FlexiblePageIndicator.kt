@@ -141,7 +141,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         viewHeight = (height - viewPaddingTop - viewPaddingBottom).toFloat()
 
         if (!calculated) {
-            calculate()
+            calculateCoordinates()
         }
 
         for (position: Int in 0 until totalDotCount) {
@@ -151,23 +151,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        if (pageNavigationEnabled) {
-            event?.let {
-                if (it.actionMasked == MotionEvent.ACTION_DOWN) {
-                    return true
-                }
-
-                if (it.actionMasked == MotionEvent.ACTION_UP) {
-                    for (position: Int in 0 until dotCount) {
-                        if (it.x in xCoordinates[position] - (dotSize + dotSpace) / 4..xCoordinates[position] + (dotSize + dotSpace) / 4) {
-                            setCurrentItem(position - bias)
-                            return true
-                        }
-                    }
-                }
-            }
-        }
-        return false
+        return onDotTouch(event)
     }
 
     override fun onPageScrollStateChanged(state: Int) {
@@ -242,7 +226,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         cursorEndX = viewPaddingStart + (0.5F + cursorEndPosition) * dotSpace
     }
 
-    private fun calculate() {
+    private fun calculateCoordinates() {
         xCoordinates = FloatArray(dotCount)
         for (position: Int in 0 until xCoordinates.size) {
             xCoordinates[position] = viewPaddingStart + viewWidth / dotCount * position + dotSpace / 2
@@ -340,6 +324,26 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         if (canScroll) {
             bias -= fix
         }
+    }
+
+    private fun onDotTouch(event: MotionEvent?): Boolean {
+        if (pageNavigationEnabled) {
+            event?.let {
+                if (it.actionMasked == MotionEvent.ACTION_DOWN) {
+                    return true
+                }
+
+                if (it.actionMasked == MotionEvent.ACTION_UP) {
+                    for (position: Int in 0 until dotCount) {
+                        if (it.x in xCoordinates[position] - (dotSize + dotSpace) / 4..xCoordinates[position] + (dotSize + dotSpace) / 4) {
+                            setCurrentItem(position - bias)
+                            return true
+                        }
+                    }
+                }
+            }
+        }
+        return false
     }
 
     private fun setCurrentItem(position: Int) {
