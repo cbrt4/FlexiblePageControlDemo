@@ -30,6 +30,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         const val defaultDotCount = 7
     }
 
+    private val paint = Paint()
+
     private var viewPaddingTop = 0
     private var viewPaddingBottom = 0
     private var viewPaddingStart = 0
@@ -49,7 +51,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var totalDotCount = 0
     private var bias = 2
     private var currentPosition = 0
-    private var selectedPosition = 0
+    private var selectionPosition = 0
     private var animationMoveFactor = 0F
     private var animationColor = 0
     private var animationColorReverse = 0
@@ -96,6 +98,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 animationDuration = getInteger(R.styleable.FlexiblePageIndicator_animationDuration, 300).toLong()
 
                 pageNavigationEnabled = getBoolean(R.styleable.FlexiblePageIndicator_pageNavigationEnabled, true)
+
+                paint.isAntiAlias = true
 
                 animator = ValueAnimator()
 
@@ -164,7 +168,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     override fun onPageSelected(position: Int) {
-//        pageSelected(position)
+        //
     }
 
     fun setupWithViewPager(viewPager: ViewPager) {
@@ -173,7 +177,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
         viewPager.adapter?.let {
             totalDotCount = it.count
-            selectedPosition = viewPager.currentItem
+            currentPosition = viewPager.currentItem
 
             scrollableIndication = totalDotCount > dotCount
 
@@ -281,27 +285,33 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                     else -> dotSize / 2
                 }
 
-        val paint = Paint()
-        paint.isAntiAlias = true
-        paint.color = when {
-            reverseAnimation && position == selectedPosition - 1 -> animationColor
-            !reverseAnimation && position == selectedPosition + 1 -> animationColor
-            position == selectedPosition -> animationColorReverse
-            else -> dotDefaultColor
-        }
+        paint.color =
+                when (position) {
+                    selectionPosition -> animationColor
+                    currentPosition -> animationColorReverse
+                    else -> dotDefaultColor
+                }
 
         canvas.drawCircle(x, y, radius, paint)
     }
 
     private fun pageScrolled(position: Int, positionOffset: Float) {
-        reverseAnimation = position < selectedPosition && positionOffset != 0F
-
-        canScroll = reverseAnimation && position + bias < cursorStartPosition ||
-                !reverseAnimation && position + 1 + bias > cursorEndPosition
 
         if (positionOffset == 0F) {
             pageSelected(position)
         }
+
+        reverseAnimation = position < currentPosition && positionOffset != 0F
+
+        selectionPosition =
+                if (reverseAnimation) {
+                    position
+                } else {
+                    position + 1
+                }
+
+        canScroll = reverseAnimation && selectionPosition + bias < cursorStartPosition ||
+                !reverseAnimation && selectionPosition + bias > cursorEndPosition
 
         animator?.currentPlayTime =
                 if (reverseAnimation) {
@@ -309,21 +319,23 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 } else {
                     (animationDuration * positionOffset).toLong()
                 }
+
+        println("currentPosition = $currentPosition, positionOffset = $positionOffset, reverseAnimation = $reverseAnimation")
     }
 
     private fun pageSelected(position: Int) {
-        selectedPosition = position
+        currentPosition = position
         fixBias()
     }
 
     private fun fixBias() {
         val fix =
                 when {
-                    selectedPosition > cursorEndPosition - bias ->
-                        selectedPosition - cursorEndPosition + bias
+                    currentPosition > cursorEndPosition - bias ->
+                        currentPosition - cursorEndPosition + bias
 
-                    selectedPosition < cursorStartPosition - bias ->
-                        selectedPosition - cursorStartPosition + bias
+                    currentPosition < cursorStartPosition - bias ->
+                        currentPosition - cursorStartPosition + bias
 
                     else -> 0
                 }
