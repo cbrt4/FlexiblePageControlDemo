@@ -50,8 +50,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     private var totalDotCount = 0
     private var bias = 2
-    private var currentPosition = 0
-    private var selectionPosition = 0
+    private var currentSelection = 0
+    private var newSelection = 0
     private var animationMoveFactor = 0F
     private var animationColor = 0
     private var animationColorReverse = 0
@@ -177,7 +177,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
         viewPager.adapter?.let {
             totalDotCount = it.count
-            currentPosition = viewPager.currentItem
+            currentSelection = viewPager.currentItem
 
             scrollableIndication = totalDotCount > dotCount
 
@@ -287,8 +287,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
         paint.color =
                 when (position) {
-                    selectionPosition -> animationColor
-                    currentPosition -> animationColorReverse
+                    newSelection -> animationColor
+                    currentSelection -> animationColorReverse
                     else -> dotDefaultColor
                 }
 
@@ -301,17 +301,17 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
             pageSelected(position)
         }
 
-        reverseAnimation = position < currentPosition && positionOffset != 0F
+        reverseAnimation = position < currentSelection && positionOffset != 0F
 
-        selectionPosition =
+        newSelection =
                 if (reverseAnimation) {
                     position
                 } else {
                     position + 1
                 }
 
-        canScroll = reverseAnimation && selectionPosition + bias < cursorStartPosition ||
-                !reverseAnimation && selectionPosition + bias > cursorEndPosition
+        canScroll = reverseAnimation && newSelection + bias < cursorStartPosition ||
+                !reverseAnimation && newSelection + bias > cursorEndPosition
 
         animator?.currentPlayTime =
                 if (reverseAnimation) {
@@ -320,22 +320,22 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                     (animationDuration * positionOffset).toLong()
                 }
 
-        println("currentPosition = $currentPosition, positionOffset = $positionOffset, reverseAnimation = $reverseAnimation")
+//        println("currentSelection = $currentSelection, positionOffset = $positionOffset, reverseAnimation = $reverseAnimation")
     }
 
     private fun pageSelected(position: Int) {
-        currentPosition = position
+        currentSelection = position
         fixBias()
     }
 
     private fun fixBias() {
         val fix =
                 when {
-                    currentPosition > cursorEndPosition - bias ->
-                        currentPosition - cursorEndPosition + bias
+                    currentSelection > cursorEndPosition - bias ->
+                        currentSelection - cursorEndPosition + bias
 
-                    currentPosition < cursorStartPosition - bias ->
-                        currentPosition - cursorStartPosition + bias
+                    currentSelection < cursorStartPosition - bias ->
+                        currentSelection - cursorStartPosition + bias
 
                     else -> 0
                 }
