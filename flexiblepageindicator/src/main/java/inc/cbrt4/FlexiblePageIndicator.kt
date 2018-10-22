@@ -48,6 +48,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     private var totalDotCount = 0
     private var bias = 2
+    private var currentPosition = 0
     private var selectedPosition = 0
     private var animationMoveFactor = 0F
     private var animationColor = 0
@@ -163,7 +164,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     override fun onPageSelected(position: Int) {
-        pageSelected(position)
+//        pageSelected(position)
     }
 
     fun setupWithViewPager(viewPager: ViewPager) {
@@ -294,6 +295,14 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     private fun pageScrolled(position: Int, positionOffset: Float) {
         reverseAnimation = position < selectedPosition && positionOffset != 0F
+
+        canScroll = reverseAnimation && position + bias < cursorStartPosition ||
+                !reverseAnimation && position + 1 + bias > cursorEndPosition
+
+        if (positionOffset == 0F) {
+            pageSelected(position)
+        }
+
         animator?.currentPlayTime =
                 if (reverseAnimation) {
                     (animationDuration * (1 - positionOffset)).toLong()
@@ -319,11 +328,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                     else -> 0
                 }
 
-        canScroll = fix != 0
-
-        if (canScroll) {
-            bias -= fix
-        }
+        bias -= fix
     }
 
     private fun onDotTouch(event: MotionEvent?): Boolean {
