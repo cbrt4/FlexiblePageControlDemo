@@ -258,67 +258,71 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     private fun drawIndicator(canvas: Canvas, position: Int) {
 
-        val x = -animationMoveFactor +
-                if (scrollableIndication) {
-                    when {
-                        position + bias in 0 until dotCount -> xCoordinates[position + bias]
-                        position + bias == -1 -> xCoordinates[0] - dotSpace
-                        position + bias == dotCount -> xCoordinates[dotCount - 1] + dotSpace
-                        else -> -1F
-                    }
-                } else {
-                    xCoordinates[position]
-                }
+        val x = if (scrollableIndication) {
+            when {
+                position + bias in 0 until dotCount -> xCoordinates[position + bias]
+                position + bias == -1 -> xCoordinates[0] - dotSpace
+                position + bias == dotCount -> xCoordinates[dotCount - 1] + dotSpace
+                else -> -1F
+            } - animationMoveFactor
+        } else {
+            xCoordinates[position]
+        }
 
         val y = (height / 2).toFloat()
 
-        val radius =
-                when {
-                    x < -animationMoveFactor -> 0F
+        val radius = if (scrollableIndication) {
+            when {
+                x < -animationMoveFactor -> 0F
 
-                    x < cursorStartX ->
-                        dotSize * sqrt((x - viewPaddingStart) / (cursorStartX - viewPaddingStart)) / 2
+                x < cursorStartX ->
+                    dotSize * sqrt((x - viewPaddingStart) / (cursorStartX - viewPaddingStart)) / 2
 
-                    x > cursorEndX ->
-                        dotSize * sqrt((viewPaddingStart + viewWidth - x) / (viewPaddingStart + viewWidth - cursorEndX)) / 2
+                x > cursorEndX ->
+                    dotSize * sqrt((viewPaddingStart + viewWidth - x) / (viewPaddingStart + viewWidth - cursorEndX)) / 2
 
-                    else -> dotSize / 2
-                }
+                else -> dotSize / 2
+            }
+        } else {
+            dotSize / 2
+        }
 
-        paint.color =
-                when (position) {
-                    newSelection -> animationColor
-                    currentSelection -> animationColorReverse
-                    else -> dotDefaultColor
-                }
+        paint.color = when (position) {
+            newSelection -> animationColor
+            currentSelection -> animationColorReverse
+            else -> dotDefaultColor
+        }
 
         canvas.drawCircle(x, y, radius, paint)
     }
 
     private fun pageScrolled(position: Int, positionOffset: Float) {
 
-        if (positionOffset < 0.1F) {
-            pageSelected(position)
-        }
-
         reverseAnimation = position < currentSelection && positionOffset != 0F
 
-        newSelection =
-                if (reverseAnimation) {
+        newSelection = if (reverseAnimation) {
                     position
                 } else {
                     position + 1
                 }
 
-        canScroll = reverseAnimation && newSelection + bias < cursorStartPosition ||
-                !reverseAnimation && newSelection + bias > cursorEndPosition
+        if (reverseAnimation && positionOffset < 0.1F) {
+            pageSelected(position)
+        } else if (!reverseAnimation && positionOffset > 0.9F) {
+            pageSelected(position + 1)
+        }
 
-        animator?.currentPlayTime =
+        if (scrollableIndication) {
+            canScroll = reverseAnimation && newSelection + bias < cursorStartPosition ||
+                    !reverseAnimation && newSelection + bias > cursorEndPosition
+        }
+
+        animator?.currentPlayTime = (animationDuration *
                 if (reverseAnimation) {
-                    (animationDuration * (1 - positionOffset)).toLong()
+                    1 - positionOffset
                 } else {
-                    (animationDuration * positionOffset).toLong()
-                }
+                    positionOffset
+                }).toLong()
     }
 
     private fun pageSelected(position: Int) {
