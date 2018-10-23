@@ -297,7 +297,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     private fun pageScrolled(position: Int, positionOffset: Float) {
 
-        if (positionOffset == 0F || currentSelection !in position..position + 1) {
+        if (positionOffset < 0.1F) {
             pageSelected(position)
         }
 
