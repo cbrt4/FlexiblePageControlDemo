@@ -297,7 +297,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     private fun pageScrolled(position: Int, positionOffset: Float) {
 
-        if (positionOffset == 0F) {
+        if (positionOffset == 0F || currentSelection !in position..position + 1) {
             pageSelected(position)
         }
 
@@ -319,8 +319,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 } else {
                     (animationDuration * positionOffset).toLong()
                 }
-
-//        println("currentSelection = $currentSelection, positionOffset = $positionOffset, reverseAnimation = $reverseAnimation")
     }
 
     private fun pageSelected(position: Int) {
