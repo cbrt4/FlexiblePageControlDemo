@@ -1,8 +1,8 @@
 package inc.cbrt4.flexiblepagecontroldemo
 
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v4.view.PagerAdapter
+import android.support.v7.app.AppCompatActivity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,7 +10,17 @@ import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
-    val colorArray: Array<Int> = arrayOf(R.color.colorRed, R.color.colorOrange, R.color.colorYellow, R.color.colorGreen, R.color.colorBlue, R.color.colorIndigo, R.color.colorViolet, R.color.colorWhite, R.color.colorGrey)
+    val colorArray: Array<Int> = arrayOf(
+            R.color.colorRed,
+            R.color.colorOrange,
+            R.color.colorYellow,
+            R.color.colorGreen,
+            R.color.colorBlue,
+            R.color.colorIndigo,
+            R.color.colorViolet,
+            R.color.colorWhite,
+            R.color.colorGrey
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

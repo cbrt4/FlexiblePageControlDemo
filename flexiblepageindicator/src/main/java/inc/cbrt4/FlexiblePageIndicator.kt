@@ -302,9 +302,9 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         reverseAnimation = position < currentSelection && positionOffset != 0F
 
         newSelection = if (reverseAnimation) {
-            position
+            currentSelection - 1
         } else {
-            position + 1
+            currentSelection + 1
         }
 
         if (reverseAnimation && positionOffset < 0.1F || !reverseAnimation && positionOffset > 0.9F) {
