@@ -52,6 +52,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var bias = 2
     private var currentSelection = 0
     private var newSelection = 0
+    private var pagerCurrentItem = 0
     private var animationMoveFactor = 0F
     private var animationColor = 0
     private var animationColorReverse = 0
@@ -168,7 +169,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     override fun onPageSelected(position: Int) {
-        //
+        pagerCurrentItem = position
     }
 
     fun setupWithViewPager(viewPager: ViewPager) {
@@ -301,15 +302,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         reverseAnimation = position < currentSelection && positionOffset != 0F
 
         newSelection = if (reverseAnimation) {
-                    position
-                } else {
-                    position + 1
-                }
+            position
+        } else {
+            position + 1
+        }
 
-        if (reverseAnimation && positionOffset < 0.1F) {
-            pageSelected(position)
-        } else if (!reverseAnimation && positionOffset > 0.9F) {
-            pageSelected(position + 1)
+        if (reverseAnimation && positionOffset < 0.1F || !reverseAnimation && positionOffset > 0.9F) {
+            pageSelected(pagerCurrentItem)
         }
 
         if (scrollableIndication) {
@@ -348,15 +347,16 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private fun onDotTouch(event: MotionEvent?): Boolean {
         if (pageNavigationEnabled) {
             event?.let {
-                if (it.actionMasked == MotionEvent.ACTION_DOWN) {
-                    return true
-                }
+                when {
+                    it.actionMasked == MotionEvent.ACTION_DOWN -> {
+                        return true
+                    }
 
-                if (it.actionMasked == MotionEvent.ACTION_UP) {
-                    for (position: Int in 0 until dotCount) {
-                        if (it.x in xCoordinates[position] - (dotSize + dotSpace) / 4..xCoordinates[position] + (dotSize + dotSpace) / 4) {
-                            setCurrentItem(position - bias)
-                            return true
+                    it.actionMasked == MotionEvent.ACTION_UP -> {
+                        for (position: Int in 0 until dotCount) {
+                            if (it.x in xCoordinates[position] - (dotSize + dotSpace) / 4..xCoordinates[position] + (dotSize + dotSpace) / 4) {
+                                setCurrentItem(position - bias)
+                            }
                         }
                     }
                 }
