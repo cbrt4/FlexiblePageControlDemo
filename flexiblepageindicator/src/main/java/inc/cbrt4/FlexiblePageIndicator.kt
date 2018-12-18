@@ -24,6 +24,9 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         const val keyPropertyColor = "color"
         const val keyPropertyColorReverse = "colorReverse"
 
+        const val keyPropertyPosition = "position"
+        const val keyPropertyPositionOffset = "positionOffset"
+
         const val colorDefault = -0x80000000
         const val colorSelected = -0x333334
 
@@ -70,6 +73,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     private var viewPager: ViewPager? = null
     private var animator: ValueAnimator? = null
+    private var scrollAnimator: ValueAnimator? = null
 
     init {
         context.theme.obtainStyledAttributes(
@@ -103,6 +107,11 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 paint.isAntiAlias = true
 
                 animator = ValueAnimator()
+
+                if (pageNavigationEnabled) {
+                    scrollAnimator = ValueAnimator()
+                    setupScrollAnimator()
+                }
 
                 setupAnimations()
 
@@ -157,7 +166,11 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        return onDotTouch(event)
+        return if (pageNavigationEnabled) {
+            onDotTouch(event)
+        } else {
+            false
+        }
     }
 
     override fun onPageScrollStateChanged(state: Int) {
@@ -207,6 +220,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
             it.interpolator = AccelerateDecelerateInterpolator()
             it.duration = animationDuration
             it.addUpdateListener { animation -> updateValues(animation) }
+        }
+    }
+
+    private fun setupScrollAnimator() {
+        scrollAnimator?.let {
+            it.interpolator = AccelerateDecelerateInterpolator()
+            it.duration = animationDuration
         }
     }
 
@@ -316,12 +336,14 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                     !reverseAnimation && newSelection + bias > cursorEndPosition
         }
 
-        animator?.currentPlayTime = (animationDuration *
-                if (reverseAnimation) {
-                    1 - positionOffset
-                } else {
-                    positionOffset
-                }).toLong()
+        animator?.currentPlayTime = (
+                animationDuration *
+                        if (reverseAnimation) {
+                            1 - positionOffset
+                        } else {
+                            positionOffset
+                        }
+                ).toLong()
     }
 
     private fun pageSelected(position: Int) {
@@ -345,18 +367,16 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     private fun onDotTouch(event: MotionEvent?): Boolean {
-        if (pageNavigationEnabled) {
-            event?.let {
-                when {
-                    it.actionMasked == MotionEvent.ACTION_DOWN -> {
-                        return true
-                    }
+        event?.let {
+            when {
+                it.actionMasked == MotionEvent.ACTION_DOWN -> {
+                    return true
+                }
 
-                    it.actionMasked == MotionEvent.ACTION_UP -> {
-                        for (position: Int in 0 until dotCount) {
-                            if (it.x in xCoordinates[position] - (dotSize + dotSpace) / 4..xCoordinates[position] + (dotSize + dotSpace) / 4) {
-                                setCurrentItem(position - bias)
-                            }
+                it.actionMasked == MotionEvent.ACTION_UP -> {
+                    for (position: Int in 0 until dotCount) {
+                        if (it.x in xCoordinates[position] - (dotSize + dotSpace) / 4..xCoordinates[position] + (dotSize + dotSpace) / 4) {
+                            setCurrentItem(position - bias)
                         }
                     }
                 }
@@ -366,6 +386,17 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     private fun setCurrentItem(position: Int) {
-        viewPager?.setCurrentItem(position, true)
+        if (currentSelection == position) return
+
+        val positionValue = PropertyValuesHolder.ofInt(keyPropertyPosition, currentSelection, position)
+        val positionOffsetValue = PropertyValuesHolder.ofFloat(keyPropertyPositionOffset, 0F, 1F)
+
+        scrollAnimator?.let {
+            it.setValues(positionValue, positionOffsetValue)
+            it.addUpdateListener { animation ->
+                pageScrolled(animation.getAnimatedValue(keyPropertyPosition) as Int,
+                        animation.getAnimatedValue(keyPropertyPositionOffset) as Float) }
+            it.start()
+        }
     }
 }
