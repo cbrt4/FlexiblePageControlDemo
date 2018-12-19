@@ -54,7 +54,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var animationMoveFactor = 0F
     private var animationColor = 0
     private var animationColorReverse = 0
-    private var forwardAnimation = false
     private var reverseAnimation = false
     private var scrollableIndication = false
     private var canScroll = false
@@ -235,9 +234,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private fun updateValues(animation: ValueAnimator) {
         animationMoveFactor = if (canScroll) {
             when {
-                forwardAnimation -> animation.getAnimatedValue(keyPropertyMoveFactor) as Float
                 reverseAnimation -> -(animation.getAnimatedValue(keyPropertyMoveFactor) as Float)
-                else -> 0F
+                else -> animation.getAnimatedValue(keyPropertyMoveFactor) as Float
             }
         } else {
             0F
@@ -291,31 +289,27 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     private fun pageScrolled(position: Int, positionOffset: Float) {
 
-        forwardAnimation = position == currentSelection && positionOffset != 0F
         reverseAnimation = position < currentSelection && positionOffset != 0F
 
         newSelection = when {
-            forwardAnimation -> currentSelection + 1
             reverseAnimation -> currentSelection - 1
-            else -> currentSelection
+            else -> currentSelection + 1
         }
 
-        if (positionOffset == 0F) {
+        if (positionOffset == 0F ||
+                !reverseAnimation && position != currentSelection || reverseAnimation && position != currentSelection - 1) {
             pageSelected(pagerCurrentItem)
         }
 
         if (scrollableIndication) {
-            canScroll = forwardAnimation && newSelection + bias > cursorEndPosition ||
+            canScroll = !reverseAnimation && newSelection + bias > cursorEndPosition ||
                     reverseAnimation && newSelection + bias < cursorStartPosition
         }
 
-        animator?.currentPlayTime = (
-                animationDuration * when {
-                    forwardAnimation -> positionOffset
-                    reverseAnimation -> 1 - positionOffset
-                    else -> 0F
-                }
-                ).toLong()
+        animator?.currentPlayTime = (animationDuration * when {
+            reverseAnimation -> 1 - positionOffset
+            else -> positionOffset
+        }).toLong()
     }
 
     private fun pageSelected(position: Int) {
