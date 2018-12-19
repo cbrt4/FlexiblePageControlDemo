@@ -11,7 +11,6 @@ import android.os.Build
 import android.support.v4.view.ViewPager
 import android.support.v4.view.ViewPager.OnPageChangeListener
 import android.util.AttributeSet
-import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import inc.cbrt4.flexiblepageindicator.R
@@ -23,9 +22,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         const val keyPropertyMoveFactor = "animationMoveFactor"
         const val keyPropertyColor = "color"
         const val keyPropertyColorReverse = "colorReverse"
-
-        const val keyPropertyPosition = "position"
-        const val keyPropertyPositionOffset = "positionOffset"
 
         const val colorDefault = -0x80000000
         const val colorSelected = -0x333334
@@ -49,7 +45,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var dotSize = 0F
     private var dotSpace = 0F
     private var animationDuration = 0L
-    private var pageNavigationEnabled = false
 
     private var totalDotCount = 0
     private var bias = 2
@@ -59,6 +54,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var animationMoveFactor = 0F
     private var animationColor = 0
     private var animationColorReverse = 0
+    private var forwardAnimation = false
     private var reverseAnimation = false
     private var scrollableIndication = false
     private var canScroll = false
@@ -73,7 +69,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     private var viewPager: ViewPager? = null
     private var animator: ValueAnimator? = null
-    private var scrollAnimator: ValueAnimator? = null
 
     init {
         context.theme.obtainStyledAttributes(
@@ -100,18 +95,11 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                     dotSpace = 2 * dotSize
                 }
 
-                animationDuration = getInteger(R.styleable.FlexiblePageIndicator_animationDuration, 300).toLong()
-
-                pageNavigationEnabled = getBoolean(R.styleable.FlexiblePageIndicator_pageNavigationEnabled, true)
+                animationDuration = 1000L
 
                 paint.isAntiAlias = true
 
                 animator = ValueAnimator()
-
-                if (pageNavigationEnabled) {
-                    scrollAnimator = ValueAnimator()
-                    setupScrollAnimator()
-                }
 
                 setupAnimations()
 
@@ -161,15 +149,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
         for (position: Int in 0 until totalDotCount) {
             drawIndicator(canvas, position)
-        }
-    }
-
-    @SuppressLint("ClickableViewAccessibility")
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        return if (pageNavigationEnabled) {
-            onDotTouch(event)
-        } else {
-            false
         }
     }
 
@@ -223,13 +202,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         }
     }
 
-    private fun setupScrollAnimator() {
-        scrollAnimator?.let {
-            it.interpolator = AccelerateDecelerateInterpolator()
-            it.duration = animationDuration
-        }
-    }
-
     private fun setupPadding() {
         viewPaddingTop = paddingTop
         viewPaddingBottom = paddingBottom
@@ -261,15 +233,15 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     private fun updateValues(animation: ValueAnimator) {
-        animationMoveFactor =
-                if (canScroll) {
-                    when {
-                        reverseAnimation -> -(animation.getAnimatedValue(keyPropertyMoveFactor) as Float)
-                        else -> animation.getAnimatedValue(keyPropertyMoveFactor) as Float
-                    }
-                } else {
-                    0F
-                }
+        animationMoveFactor = if (canScroll) {
+            when {
+                forwardAnimation -> animation.getAnimatedValue(keyPropertyMoveFactor) as Float
+                reverseAnimation -> -(animation.getAnimatedValue(keyPropertyMoveFactor) as Float)
+                else -> 0F
+            }
+        } else {
+            0F
+        }
 
         animationColor = animation.getAnimatedValue(keyPropertyColor) as Int
         animationColorReverse = animation.getAnimatedValue(keyPropertyColorReverse) as Int
@@ -309,8 +281,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         }
 
         paint.color = when (position) {
-            newSelection -> animationColor
             currentSelection -> animationColorReverse
+            newSelection -> animationColor
             else -> dotDefaultColor
         }
 
@@ -319,30 +291,30 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     private fun pageScrolled(position: Int, positionOffset: Float) {
 
+        forwardAnimation = position == currentSelection && positionOffset != 0F
         reverseAnimation = position < currentSelection && positionOffset != 0F
 
-        newSelection = if (reverseAnimation) {
-            currentSelection - 1
-        } else {
-            currentSelection + 1
+        newSelection = when {
+            forwardAnimation -> currentSelection + 1
+            reverseAnimation -> currentSelection - 1
+            else -> currentSelection
         }
 
-        if (reverseAnimation && positionOffset < 0.1F || !reverseAnimation && positionOffset > 0.9F) {
+        if (positionOffset == 0F) {
             pageSelected(pagerCurrentItem)
         }
 
         if (scrollableIndication) {
-            canScroll = reverseAnimation && newSelection + bias < cursorStartPosition ||
-                    !reverseAnimation && newSelection + bias > cursorEndPosition
+            canScroll = forwardAnimation && newSelection + bias > cursorEndPosition ||
+                    reverseAnimation && newSelection + bias < cursorStartPosition
         }
 
         animator?.currentPlayTime = (
-                animationDuration *
-                        if (reverseAnimation) {
-                            1 - positionOffset
-                        } else {
-                            positionOffset
-                        }
+                animationDuration * when {
+                    forwardAnimation -> positionOffset
+                    reverseAnimation -> 1 - positionOffset
+                    else -> 0F
+                }
                 ).toLong()
     }
 
@@ -352,51 +324,16 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     private fun fixBias() {
-        val fix =
-                when {
-                    currentSelection > cursorEndPosition - bias ->
-                        currentSelection - cursorEndPosition + bias
+        val fix = when {
+            currentSelection > cursorEndPosition - bias ->
+                currentSelection - cursorEndPosition + bias
 
-                    currentSelection < cursorStartPosition - bias ->
-                        currentSelection - cursorStartPosition + bias
+            currentSelection < cursorStartPosition - bias ->
+                currentSelection - cursorStartPosition + bias
 
-                    else -> 0
-                }
+            else -> 0
+        }
 
         bias -= fix
-    }
-
-    private fun onDotTouch(event: MotionEvent?): Boolean {
-        event?.let {
-            when {
-                it.actionMasked == MotionEvent.ACTION_DOWN -> {
-                    return true
-                }
-
-                it.actionMasked == MotionEvent.ACTION_UP -> {
-                    for (position: Int in 0 until dotCount) {
-                        if (it.x in xCoordinates[position] - (dotSize + dotSpace) / 4..xCoordinates[position] + (dotSize + dotSpace) / 4) {
-                            setCurrentItem(position - bias)
-                        }
-                    }
-                }
-            }
-        }
-        return false
-    }
-
-    private fun setCurrentItem(position: Int) {
-        if (currentSelection == position) return
-
-        val positionValue = PropertyValuesHolder.ofInt(keyPropertyPosition, currentSelection, position)
-        val positionOffsetValue = PropertyValuesHolder.ofFloat(keyPropertyPositionOffset, 0F, 1F)
-
-        scrollAnimator?.let {
-            it.setValues(positionValue, positionOffsetValue)
-            it.addUpdateListener { animation ->
-                pageScrolled(animation.getAnimatedValue(keyPropertyPosition) as Int,
-                        animation.getAnimatedValue(keyPropertyPositionOffset) as Float) }
-            it.start()
-        }
     }
 }
