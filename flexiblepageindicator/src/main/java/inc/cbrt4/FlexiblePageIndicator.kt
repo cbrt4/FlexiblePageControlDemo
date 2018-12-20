@@ -111,11 +111,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     @SuppressLint("SwitchIntDef")
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
 
-        setupPadding()
-        setupCursor()
-
-        val contentWidth = dotCount * dotSpace
-        val contentHeight = dotSpace
+        val contentWidth = dotCount * dotSpace + viewPaddingStart + viewPaddingEnd
+        val contentHeight = dotSpace + viewPaddingTop + viewPaddingBottom
 
         val widthMode = MeasureSpec.getMode(widthMeasureSpec)
         val widthSize = MeasureSpec.getSize(widthMeasureSpec)
@@ -134,7 +131,10 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
             else -> contentHeight.toInt()
         }
 
-        setMeasuredDimension(width + viewPaddingStart + viewPaddingEnd, height + viewPaddingTop + viewPaddingBottom)
+        setupPadding((width - contentWidth.toInt()) / 2)
+        setupCursor()
+
+        setMeasuredDimension(width, height)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -201,15 +201,15 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         }
     }
 
-    private fun setupPadding() {
+    private fun setupPadding(paddingFix: Int) {
         viewPaddingTop = paddingTop
         viewPaddingBottom = paddingBottom
-        viewPaddingStart = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+        viewPaddingStart = paddingFix + if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             paddingStart
         } else {
             paddingLeft
         }
-        viewPaddingEnd = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+        viewPaddingEnd = paddingFix + if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             paddingEnd
         } else {
             paddingRight
@@ -226,7 +226,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private fun calculateCoordinates() {
         xCoordinates = FloatArray(dotCount)
         for (position: Int in 0 until xCoordinates.size) {
-            xCoordinates[position] = viewPaddingStart + viewWidth / dotCount * position + dotSpace / 2
+            xCoordinates[position] = viewPaddingStart + dotSpace * position + dotSpace / 2
         }
         calculated = true
     }
