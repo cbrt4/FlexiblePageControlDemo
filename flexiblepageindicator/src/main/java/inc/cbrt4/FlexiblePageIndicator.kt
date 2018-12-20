@@ -63,18 +63,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var cursorStartX = 0F
     private var cursorEndX = 0F
 
-    private var calculated = false
     private var xCoordinates = floatArrayOf()
 
     private var viewPager: ViewPager? = null
     private var animator: ValueAnimator? = null
 
     init {
-        context.theme.obtainStyledAttributes(
-                attrs,
-                R.styleable.FlexiblePageIndicator,
-                0,
-                0).apply {
+        context.theme.obtainStyledAttributes(attrs, R.styleable.FlexiblePageIndicator, 0, 0).apply {
             try {
                 dotDefaultColor = getColor(R.styleable.FlexiblePageIndicator_dotColorDefault,
                         colorDefault)
@@ -111,8 +106,10 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     @SuppressLint("SwitchIntDef")
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
 
-        val contentWidth = dotCount * dotSpace + viewPaddingStart + viewPaddingEnd
-        val contentHeight = dotSpace + viewPaddingTop + viewPaddingBottom
+        setupPadding()
+
+        viewWidth = dotCount * dotSpace
+        viewHeight = dotSpace
 
         val widthMode = MeasureSpec.getMode(widthMeasureSpec)
         val widthSize = MeasureSpec.getSize(widthMeasureSpec)
@@ -121,31 +118,28 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
         val width: Int = when (widthMode) {
             MeasureSpec.EXACTLY -> widthSize
-            MeasureSpec.AT_MOST -> Math.min(contentWidth.toInt(), widthSize)
-            else -> contentWidth.toInt()
+            MeasureSpec.AT_MOST -> Math.min(viewWidth.toInt(), widthSize)
+            else -> viewWidth.toInt()
         }
 
         val height: Int = when (heightMode) {
             MeasureSpec.EXACTLY -> heightSize
-            MeasureSpec.AT_MOST -> Math.min(contentHeight.toInt(), heightSize)
-            else -> contentHeight.toInt()
+            MeasureSpec.AT_MOST -> Math.min(viewHeight.toInt(), heightSize)
+            else -> viewHeight.toInt()
         }
 
-        setupPadding((width - contentWidth.toInt()) / 2)
+        fixPadding((width - viewWidth.toInt()) / 2,
+                (height - viewHeight.toInt()) / 2)
+
         setupCursor()
 
-        setMeasuredDimension(width, height)
+        measureCoordinates()
+
+        setMeasuredDimension(viewWidth.toInt() + viewPaddingStart + viewPaddingEnd,
+                viewHeight.toInt() + viewPaddingTop + viewPaddingBottom)
     }
 
     override fun onDraw(canvas: Canvas) {
-
-        viewWidth = (width - viewPaddingStart - viewPaddingEnd).toFloat()
-        viewHeight = (height - viewPaddingTop - viewPaddingBottom).toFloat()
-
-        if (!calculated) {
-            calculateCoordinates()
-        }
-
         for (position: Int in 0 until totalDotCount) {
             drawIndicator(canvas, position)
         }
@@ -201,18 +195,35 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         }
     }
 
-    private fun setupPadding(paddingFix: Int) {
-        viewPaddingTop = paddingTop
-        viewPaddingBottom = paddingBottom
-        viewPaddingStart = paddingFix + if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+    private fun setupPadding() {
+
+        viewPaddingStart = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             paddingStart
         } else {
             paddingLeft
         }
-        viewPaddingEnd = paddingFix + if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+
+        viewPaddingEnd = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             paddingEnd
         } else {
             paddingRight
+        }
+
+        viewPaddingTop = paddingTop
+
+        viewPaddingBottom = paddingBottom
+    }
+
+    private fun fixPadding(horizontalFix: Int, verticalFix: Int) {
+
+        if (horizontalFix != 0) {
+            viewPaddingStart = horizontalFix
+            viewPaddingEnd = horizontalFix
+        }
+
+        if (verticalFix != 0) {
+            viewPaddingTop = verticalFix
+            viewPaddingBottom = verticalFix
         }
     }
 
@@ -223,12 +234,11 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         cursorEndX = viewPaddingStart + (0.5F + cursorEndPosition) * dotSpace
     }
 
-    private fun calculateCoordinates() {
+    private fun measureCoordinates() {
         xCoordinates = FloatArray(dotCount)
         for (position: Int in 0 until xCoordinates.size) {
             xCoordinates[position] = viewPaddingStart + dotSpace * position + dotSpace / 2
         }
-        calculated = true
     }
 
     private fun updateValues(animation: ValueAnimator) {
@@ -297,7 +307,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         }
 
         if (positionOffset == 0F ||
-                !reverseAnimation && position != currentSelection || reverseAnimation && position != currentSelection - 1) {
+                !reverseAnimation && position != currentSelection ||
+                reverseAnimation && position != currentSelection - 1) {
             pageSelected(pagerCurrentItem)
         }
 
