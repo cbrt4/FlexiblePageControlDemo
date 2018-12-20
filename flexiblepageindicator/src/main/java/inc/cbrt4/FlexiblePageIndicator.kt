@@ -18,16 +18,14 @@ import kotlin.math.sqrt
 
 class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(context, attrs), OnPageChangeListener {
 
-    companion object {
-        const val keyPropertyMoveFactor = "animationMoveFactor"
-        const val keyPropertyColor = "color"
-        const val keyPropertyColorReverse = "colorReverse"
+    private val keyPropertyMoveFactor = "animationMoveFactor"
+    private val keyPropertyColor = "color"
+    private val keyPropertyColorReverse = "colorReverse"
 
-        const val colorDefault = -2130706433
-        const val colorSelected = -1
+    private val colorDefault = -2130706433
+    private val colorSelected = -1
 
-        const val defaultDotCount = 7
-    }
+    private val defaultDotCount = 7
 
     private val paint = Paint()
 
