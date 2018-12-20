@@ -5,15 +5,8 @@
     <color name="colorAccent">#D81B60</color>
 
     <color name="colorTransparent">#00000000</color>
-    <color name="colorSemiTransparent">#90000000</color>
+    <color name="colorSemiTransparent">#80000000</color>
 
-    <color name="colorRed">#80FF0000</color>
-    <color name="colorOrange">#80FFA500</color>
-    <color name="colorYellow">#80FFFF00</color>
-    <color name="colorGreen">#8000FF00</color>
-    <color name="colorBlue">#80007FFF</color>
-    <color name="colorIndigo">#800000FF</color>
-    <color name="colorViolet">#807F00FF</color>
-    <color name="colorWhite">#80FFFFFF</color>
-    <color name="colorGrey">#80808080</color>
+    <color name="colorIndicatorSelected">#FFFFFF</color>
+    <color name="colorIndicatorDefault">#80FFFFFF</color>
 </resources>

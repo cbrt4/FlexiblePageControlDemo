@@ -6,20 +6,23 @@ import android.support.v7.app.AppCompatActivity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
     val colorArray: Array<Int> = arrayOf(
-            R.color.colorRed,
-            R.color.colorOrange,
-            R.color.colorYellow,
-            R.color.colorGreen,
-            R.color.colorBlue,
-            R.color.colorIndigo,
-            R.color.colorViolet,
-            R.color.colorWhite,
-            R.color.colorGrey
+            R.drawable.item_pager_1,
+            R.drawable.item_pager_2,
+            R.drawable.item_pager_3,
+            R.drawable.item_pager_4,
+            R.drawable.item_pager_5,
+            R.drawable.item_pager_6,
+            R.drawable.item_pager_7,
+            R.drawable.item_pager_8,
+            R.drawable.item_pager_9,
+            R.drawable.item_pager_10,
+            R.drawable.item_pager_11
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,8 +47,8 @@ class MainActivity : AppCompatActivity() {
         val mainPagerAdapter = object : PagerAdapter() {
 
             override fun instantiateItem(container: ViewGroup, position: Int): Any {
-                val page = LayoutInflater.from(container.context).inflate(R.layout.item_page, container, false)
-                page.setBackgroundResource(colorArray[position])
+                val page: ImageView = LayoutInflater.from(container.context).inflate(R.layout.item_page, container, false) as ImageView
+                page.setImageResource(colorArray[position])
                 container.addView(page)
                 return page
             }
