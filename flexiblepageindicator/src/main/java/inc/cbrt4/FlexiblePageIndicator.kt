@@ -83,8 +83,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 dotSpace = getDimension(R.styleable.FlexiblePageIndicator_dotSpace,
                         resources.getDimension(R.dimen.dot_space_default))
 
-                if (dotSpace <= dotSize) {
-                    dotSpace = 2 * dotSize
+                if (dotSpace < dotSize * 1.2F) {
+                    dotSpace = dotSize * 1.2F
                 }
 
                 animationDuration = 1000L
@@ -214,12 +214,12 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
     private fun fixPadding(horizontalFix: Int, verticalFix: Int) {
 
-        if (horizontalFix != 0) {
+        if (horizontalFix > 0) {
             viewPaddingStart = horizontalFix
             viewPaddingEnd = horizontalFix
         }
 
-        if (verticalFix != 0) {
+        if (verticalFix > 0) {
             viewPaddingTop = verticalFix
             viewPaddingBottom = verticalFix
         }
