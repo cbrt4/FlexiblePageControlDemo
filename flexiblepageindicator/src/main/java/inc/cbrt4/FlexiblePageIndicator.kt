@@ -23,8 +23,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         const val keyPropertyColor = "color"
         const val keyPropertyColorReverse = "colorReverse"
 
-        const val colorDefault = -0x80000000
-        const val colorSelected = -0x333334
+        const val colorDefault = -2130706433
+        const val colorSelected = -1
 
         const val defaultDotCount = 7
     }

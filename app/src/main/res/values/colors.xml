@@ -6,7 +6,4 @@
 
     <color name="colorTransparent">#00000000</color>
     <color name="colorSemiTransparent">#80000000</color>
-
-    <color name="colorIndicatorSelected">#FFFFFF</color>
-    <color name="colorIndicatorDefault">#80FFFFFF</color>
 </resources>
