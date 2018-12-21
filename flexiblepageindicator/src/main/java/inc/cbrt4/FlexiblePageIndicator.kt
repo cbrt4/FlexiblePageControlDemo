@@ -25,6 +25,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private val colorDefault = -2130706433
     private val colorSelected = -1
 
+    private val minDotCount = 5
     private val defaultDotCount = 7
 
     private val paint = Paint()
@@ -164,6 +165,10 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
             currentSelection = viewPager.currentItem
 
             scrollableIndication = totalDotCount > dotCount
+
+            if (scrollableIndication && dotCount < minDotCount) {
+                dotCount = minDotCount
+            }
 
             if (!scrollableIndication) {
                 dotCount = totalDotCount
