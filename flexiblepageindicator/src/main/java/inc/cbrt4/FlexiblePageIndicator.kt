@@ -304,8 +304,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
             else -> currentSelection + 1
         }
 
-        if (positionOffset == 0F ||
-                !reverseAnimation && position != currentSelection ||
+        if (!reverseAnimation && position != currentSelection ||
                 reverseAnimation && position != currentSelection - 1) {
             pageSelected(pagerCurrentItem)
         }
