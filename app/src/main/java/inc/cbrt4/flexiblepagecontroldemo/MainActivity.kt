@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.TextView
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -47,7 +48,8 @@ class MainActivity : AppCompatActivity() {
         val mainPagerAdapter = object : PagerAdapter() {
 
             override fun instantiateItem(container: ViewGroup, position: Int): Any {
-                val page: ImageView = LayoutInflater.from(container.context).inflate(R.layout.item_page, container, false) as ImageView
+                val page = LayoutInflater.from(container.context)
+                        .inflate(R.layout.item_page, container, false) as ImageView
                 page.setImageResource(colorArray[position])
                 container.addView(page)
                 return page
