@@ -49,7 +49,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var bias = 2
     private var currentSelection = 0
     private var newSelection = 0
-    private var pagerCurrentItem = 0
     private var animationMoveFactor = 0F
     private var animationColor = 0
     private var animationColorReverse = 0
@@ -153,7 +152,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     override fun onPageSelected(position: Int) {
-        pagerCurrentItem = position
+        //
     }
 
     fun setupWithViewPager(viewPager: ViewPager) {
@@ -263,11 +262,11 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private fun drawIndicator(canvas: Canvas, position: Int) {
 
         val x = if (scrollableIndication) {
-            when {
-                position + bias in 0 until dotCount -> xCoordinates[position + bias]
-                position + bias == -1 -> xCoordinates[0] - dotSpace
-                position + bias == dotCount -> xCoordinates[dotCount - 1] + dotSpace
-                else -> -1F
+            when (position + bias) {
+                in 0 until dotCount -> xCoordinates[position + bias]
+                -1 -> xCoordinates[0] - dotSpace
+                dotCount -> xCoordinates[dotCount - 1] + dotSpace
+                else -> - dotSpace
             } - animationMoveFactor
         } else {
             xCoordinates[position]
@@ -277,8 +276,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
         val radius = if (scrollableIndication) {
             when {
-                x < -animationMoveFactor -> 0F
-
                 x < cursorStartX ->
                     dotSize * sqrt((x - viewPaddingStart) / (cursorStartX - viewPaddingStart)) / 2
 
@@ -311,7 +308,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
         if (!reverseAnimation && position != currentSelection ||
                 reverseAnimation && position != currentSelection - 1) {
-            pageSelected(pagerCurrentItem)
+            pageSelected(Math.round(position + positionOffset))
         }
 
         if (scrollableIndication) {
