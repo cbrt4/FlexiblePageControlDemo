@@ -11,6 +11,7 @@ import android.os.Build
 import android.support.v4.view.ViewPager
 import android.support.v4.view.ViewPager.OnPageChangeListener
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import inc.cbrt4.flexiblepageindicator.R
@@ -44,6 +45,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var dotSize = 0F
     private var dotSpace = 0F
     private var animationDuration = 0L
+    private var pageNavigationEnabled = false
 
     private var totalDotCount = 0
     private var bias = 2
@@ -61,7 +63,11 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var cursorStartX = 0F
     private var cursorEndX = 0F
 
+    private var touchStart = 0F
+    private var touchThreshold = 0F
+
     private var xCoordinates = floatArrayOf()
+    private var touchRanges: Array<ClosedFloatingPointRange<Float>> = arrayOf()
 
     private var viewPager: ViewPager? = null
     private var animator: ValueAnimator? = null
@@ -88,6 +94,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 }
 
                 animationDuration = 1000L
+
+                pageNavigationEnabled = getBoolean(R.styleable.FlexiblePageIndicator_pageNavigationEnabled,
+                        true)
+
+                if (pageNavigationEnabled) {
+                    touchThreshold = resources.getDimension(R.dimen.touch_threshold)
+                }
 
                 paint.isAntiAlias = true
 
@@ -140,6 +153,15 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     override fun onDraw(canvas: Canvas) {
         for (position: Int in 0 until totalDotCount) {
             drawIndicator(canvas, position)
+        }
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        return if (pageNavigationEnabled) {
+            onDotTouch(event)
+        } else {
+            false
         }
     }
 
@@ -241,6 +263,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         for (position: Int in 0 until xCoordinates.size) {
             xCoordinates[position] = viewPaddingStart + dotSpace * position + dotSpace / 2
         }
+
+        if (pageNavigationEnabled) {
+            touchRanges = Array(dotCount) { 0F..0F }
+            for (position: Int in 0 until touchRanges.size) {
+                touchRanges[position] = xCoordinates[position] - (dotSize + dotSpace) / 4..xCoordinates[position] + (dotSize + dotSpace) / 4
+            }
+        }
     }
 
     private fun updateValues(animation: ValueAnimator) {
@@ -266,7 +295,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 in 0 until dotCount -> xCoordinates[position + bias]
                 -1 -> xCoordinates[0] - dotSpace
                 dotCount -> xCoordinates[dotCount - 1] + dotSpace
-                else -> - dotSpace
+                else -> -dotSpace
             } - animationMoveFactor
         } else {
             xCoordinates[position]
@@ -339,5 +368,33 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         }
 
         bias -= fix
+    }
+
+    private fun onDotTouch(event: MotionEvent?): Boolean {
+        event?.let {
+            when {
+                it.actionMasked == MotionEvent.ACTION_DOWN -> {
+                    touchStart = it.x
+                    return true
+                }
+
+                it.actionMasked == MotionEvent.ACTION_UP -> {
+                    if (it.x in touchStart - touchThreshold..touchStart + touchThreshold) {
+                        for (position: Int in 0 until dotCount) {
+                            if (it.x in touchRanges[position]) {
+                                setCurrentItem(position - bias)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false
+    }
+
+    private fun setCurrentItem(position: Int) {
+        if (currentSelection == position) return
+
+        viewPager?.setCurrentItem(position, true)
     }
 }
