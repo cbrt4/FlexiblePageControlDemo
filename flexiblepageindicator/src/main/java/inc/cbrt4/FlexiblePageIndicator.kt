@@ -64,7 +64,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     private var cursorEndX = 0F
 
     private var touchStart = 0F
-    private var touchThreshold = 0F
 
     private var xCoordinates = floatArrayOf()
     private var touchRanges: Array<ClosedFloatingPointRange<Float>> = arrayOf()
@@ -97,10 +96,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
                 pageNavigationEnabled = getBoolean(R.styleable.FlexiblePageIndicator_pageNavigationEnabled,
                         true)
-
-                if (pageNavigationEnabled) {
-                    touchThreshold = resources.getDimension(R.dimen.touch_threshold)
-                }
 
                 paint.isAntiAlias = true
 
@@ -379,11 +374,10 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
                 }
 
                 it.actionMasked == MotionEvent.ACTION_UP -> {
-                    if (it.x in touchStart - touchThreshold..touchStart + touchThreshold) {
-                        for (position: Int in 0 until dotCount) {
-                            if (it.x in touchRanges[position]) {
-                                setCurrentItem(position - bias)
-                            }
+                    for (position: Int in 0 until touchRanges.size) {
+                        if (it.x in touchRanges[position] && touchStart in touchRanges[position]) {
+                            setCurrentItem(position - bias)
+                            return true
                         }
                     }
                 }
