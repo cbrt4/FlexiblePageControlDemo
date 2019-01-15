@@ -393,7 +393,9 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
     }
 
     private fun setCurrentItem(position: Int) {
-        if (currentSelection == position) return
+        if (currentSelection == position || position < 0 || position >= totalDotCount) {
+            return
+        }
 
         viewPager?.setCurrentItem(position, true)
     }
