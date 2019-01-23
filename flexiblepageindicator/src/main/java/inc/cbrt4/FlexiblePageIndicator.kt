@@ -336,8 +336,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
         }
 
         if (scrollableIndication) {
-            canScroll = !reverseAnimation && newSelection + bias > cursorEndPosition ||
-                    reverseAnimation && newSelection + bias < cursorStartPosition
+            canScroll = !reverseAnimation && currentSelection + bias == cursorEndPosition ||
+                    reverseAnimation && currentSelection + bias == cursorStartPosition
         }
 
         animator?.currentPlayTime = (animationDuration * when {
