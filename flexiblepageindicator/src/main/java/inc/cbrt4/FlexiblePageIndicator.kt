@@ -19,378 +19,382 @@ import kotlin.math.sqrt
 
 class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(context, attrs), OnPageChangeListener {
 
-    private val keyPropertyMoveFactor = "animationMoveFactor"
-    private val keyPropertyColor = "color"
-    private val keyPropertyColorReverse = "colorReverse"
+	private val keyPropertyMoveFactor = "animationMoveFactor"
+	private val keyPropertyColor = "color"
+	private val keyPropertyColorReverse = "colorReverse"
 
-    private val colorDefault = -2130706433
-    private val colorSelected = -1
+	private val colorDefault = -2130706433
+	private val colorSelected = -1
 
-    private val minDotCount = 5
-    private val defaultDotCount = 7
+	private val minDotCount = 5
+	private val defaultDotCount = 7
 
-    private val paint = Paint()
+	private val paint = Paint()
 
-    private var viewPaddingTop = 0
-    private var viewPaddingBottom = 0
-    private var viewPaddingStart = 0
-    private var viewPaddingEnd = 0
+	private var viewPaddingTop = 0
+	private var viewPaddingBottom = 0
+	private var viewPaddingStart = 0
+	private var viewPaddingEnd = 0
 
-    private var viewWidth = 0F
-    private var viewHeight = 0F
+	private var viewWidth = 0F
+	private var viewHeight = 0F
 
-    private var dotDefaultColor = 0
-    private var dotSelectedColor = 0
-    private var dotCount = 0
-    private var dotSize = 0F
-    private var dotSpace = 0F
-    private var animationDuration = 0L
-    private var pageNavigationEnabled = false
+	private var dotDefaultColor = 0
+	private var dotSelectedColor = 0
+	private var dotCount = 0
+	private var dotSize = 0F
+	private var dotSpace = 0F
+	private var animationDuration = 0L
+	private var pageNavigationEnabled = false
 
-    private var totalDotCount = 0
-    private var bias = 2
-    private var currentSelection = 0
-    private var newSelection = 0
-    private var animationMoveFactor = 0F
-    private var animationColor = 0
-    private var animationColorReverse = 0
-    private var reverseAnimation = false
-    private var scrollableIndication = false
-    private var canScroll = false
+	private var totalDotCount = 0
+	private var bias = 2
+	private var currentSelection = 0
+	private var newSelection = 0
+	private var animationMoveFactor = 0F
+	private var animationColor = 0
+	private var animationColorReverse = 0
+	private var reverseAnimation = false
+	private var scrollableIndication = false
+	private var canScroll = false
 
-    private var cursorStartPosition = 0
-    private var cursorEndPosition = 0
-    private var cursorStartX = 0F
-    private var cursorEndX = 0F
+	private var cursorStartPosition = 0
+	private var cursorEndPosition = 0
+	private var cursorStartX = 0F
+	private var cursorEndX = 0F
 
-    private var touchStart = 0F
+	private var touchStart = 0F
 
-    private var xCoordinates = floatArrayOf()
-    private var touchRanges: Array<ClosedFloatingPointRange<Float>> = arrayOf()
+	private var xCoordinates = floatArrayOf()
+	private var touchRanges: Array<ClosedFloatingPointRange<Float>> = arrayOf()
 
-    private var viewPager: ViewPager? = null
-    private var animator: ValueAnimator? = null
+	private var viewPager: ViewPager? = null
+	private var animator: ValueAnimator? = null
 
-    init {
-        context.theme.obtainStyledAttributes(attrs, R.styleable.FlexiblePageIndicator, 0, 0).apply {
-            try {
-                dotDefaultColor = getColor(R.styleable.FlexiblePageIndicator_dotColorDefault,
-                        colorDefault)
+	init {
+		context.theme.obtainStyledAttributes(attrs, R.styleable.FlexiblePageIndicator, 0, 0).apply {
+			try {
+				dotDefaultColor = getColor(R.styleable.FlexiblePageIndicator_dotColorDefault,
+						colorDefault)
 
-                dotSelectedColor = getColor(R.styleable.FlexiblePageIndicator_dotColorSelected,
-                        colorSelected)
+				dotSelectedColor = getColor(R.styleable.FlexiblePageIndicator_dotColorSelected,
+						colorSelected)
 
-                dotCount = getInteger(R.styleable.FlexiblePageIndicator_dotCount, defaultDotCount)
+				dotCount = getInteger(R.styleable.FlexiblePageIndicator_dotCount, defaultDotCount)
 
-                dotSize = getDimension(R.styleable.FlexiblePageIndicator_dotSize,
-                        resources.getDimension(R.dimen.dot_size_default))
+				dotSize = getDimension(R.styleable.FlexiblePageIndicator_dotSize,
+						resources.getDimension(R.dimen.dot_size_default))
 
-                dotSpace = getDimension(R.styleable.FlexiblePageIndicator_dotSpace,
-                        resources.getDimension(R.dimen.dot_space_default))
+				dotSpace = getDimension(R.styleable.FlexiblePageIndicator_dotSpace,
+						resources.getDimension(R.dimen.dot_space_default))
 
-                if (dotSpace < dotSize * 1.2F) {
-                    dotSpace = dotSize * 1.2F
-                }
+				if (dotSpace < dotSize * 1.2F) {
+					dotSpace = dotSize * 1.2F
+				}
 
-                animationDuration = 1000L
+				animationDuration = 1000L
 
-                pageNavigationEnabled = getBoolean(R.styleable.FlexiblePageIndicator_pageNavigationEnabled,
-                        true)
+				pageNavigationEnabled = getBoolean(R.styleable.FlexiblePageIndicator_pageNavigationEnabled,
+						true)
 
-                paint.isAntiAlias = true
+				paint.isAntiAlias = true
 
-                animator = ValueAnimator()
+				animator = ValueAnimator()
 
-                setupAnimations()
+				setupAnimations()
 
-            } finally {
-                recycle()
-            }
-        }
-    }
+			} finally {
+				recycle()
+			}
+		}
+	}
 
-    @SuppressLint("SwitchIntDef")
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+	@SuppressLint("SwitchIntDef")
+	override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
 
-        setupPadding()
+		setupPadding()
 
-        viewWidth = dotCount * dotSpace
-        viewHeight = dotSpace
+		viewWidth = dotCount * dotSpace
+		viewHeight = dotSpace
 
-        val widthMode = MeasureSpec.getMode(widthMeasureSpec)
-        val widthSize = MeasureSpec.getSize(widthMeasureSpec)
-        val heightMode = MeasureSpec.getMode(heightMeasureSpec)
-        val heightSize = MeasureSpec.getSize(heightMeasureSpec)
-
-        val width: Int = when (widthMode) {
-            MeasureSpec.EXACTLY -> widthSize
-            MeasureSpec.AT_MOST -> Math.min(viewWidth.toInt(), widthSize)
-            else -> viewWidth.toInt()
-        }
-
-        val height: Int = when (heightMode) {
-            MeasureSpec.EXACTLY -> heightSize
-            MeasureSpec.AT_MOST -> Math.min(viewHeight.toInt(), heightSize)
-            else -> viewHeight.toInt()
-        }
-
-        fixPadding((width - viewWidth.toInt()) / 2,
-                (height - viewHeight.toInt()) / 2)
-
-        setupCursor()
-
-        measureCoordinates()
-
-        setMeasuredDimension(viewWidth.toInt() + viewPaddingStart + viewPaddingEnd,
-                viewHeight.toInt() + viewPaddingTop + viewPaddingBottom)
-    }
-
-    override fun onDraw(canvas: Canvas) {
-        for (position: Int in 0 until totalDotCount) {
-            drawIndicator(canvas, position)
-        }
-    }
-
-    @SuppressLint("ClickableViewAccessibility")
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        return if (pageNavigationEnabled) {
-            onDotTouch(event)
-        } else {
-            false
-        }
-    }
-
-    override fun onPageScrollStateChanged(state: Int) {
-        //
-    }
-
-    override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-        pageScrolled(position, positionOffset)
-    }
-
-    override fun onPageSelected(position: Int) {
-        //
-    }
-
-    fun setupWithViewPager(viewPager: ViewPager) {
-
-        this.viewPager = viewPager
-
-        viewPager.adapter?.let {
-            totalDotCount = it.count
-            currentSelection = viewPager.currentItem
-
-            scrollableIndication = totalDotCount > dotCount
-
-            if (scrollableIndication && dotCount < minDotCount) {
-                dotCount = minDotCount
-            }
-
-            if (!scrollableIndication) {
-                dotCount = totalDotCount
-            }
-
-            viewPager.addOnPageChangeListener(this)
-        }
-    }
-
-    private fun setupAnimations() {
-        val propertyMoveForwardFactor =
-                PropertyValuesHolder.ofFloat(keyPropertyMoveFactor, 0F, dotSpace)
-
-        val propertyColor =
-                PropertyValuesHolder.ofObject(keyPropertyColor, ArgbEvaluator(), dotDefaultColor, dotSelectedColor)
-
-        val propertyColorReverse =
-                PropertyValuesHolder.ofObject(keyPropertyColorReverse, ArgbEvaluator(), dotSelectedColor, dotDefaultColor)
-
-        animator?.let {
-            it.setValues(propertyMoveForwardFactor,
-                    propertyColor,
-                    propertyColorReverse)
-            it.interpolator = AccelerateDecelerateInterpolator()
-            it.duration = animationDuration
-            it.addUpdateListener { animation -> updateValues(animation) }
-        }
-    }
-
-    private fun setupPadding() {
-
-        viewPaddingStart = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            paddingStart
-        } else {
-            paddingLeft
-        }
-
-        viewPaddingEnd = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            paddingEnd
-        } else {
-            paddingRight
-        }
-
-        viewPaddingTop = paddingTop
-
-        viewPaddingBottom = paddingBottom
-    }
-
-    private fun fixPadding(horizontalFix: Int, verticalFix: Int) {
-
-        if (horizontalFix > 0) {
-            viewPaddingStart = horizontalFix
-            viewPaddingEnd = horizontalFix
-        }
-
-        if (verticalFix > 0) {
-            viewPaddingTop = verticalFix
-            viewPaddingBottom = verticalFix
-        }
-    }
-
-    private fun setupCursor() {
-        cursorStartPosition = 2
-        cursorEndPosition = dotCount - 3
-        cursorStartX = viewPaddingStart + (0.5F + cursorStartPosition) * dotSpace
-        cursorEndX = viewPaddingStart + (0.5F + cursorEndPosition) * dotSpace
-    }
-
-    private fun measureCoordinates() {
-        xCoordinates = FloatArray(dotCount)
-        for (position: Int in 0 until xCoordinates.size) {
-            xCoordinates[position] = viewPaddingStart + dotSpace * position + dotSpace / 2
-        }
-
-        if (pageNavigationEnabled) {
-            touchRanges = Array(dotCount) { 0F..0F }
-            for (position: Int in 0 until touchRanges.size) {
-                touchRanges[position] = xCoordinates[position] - (dotSize + dotSpace) / 4..xCoordinates[position] + (dotSize + dotSpace) / 4
-            }
-        }
-    }
-
-    private fun updateValues(animation: ValueAnimator) {
-        animationMoveFactor = if (canScroll) {
-            when {
-                reverseAnimation -> -(animation.getAnimatedValue(keyPropertyMoveFactor) as Float)
-                else -> animation.getAnimatedValue(keyPropertyMoveFactor) as Float
-            }
-        } else {
-            0F
-        }
-
-        animationColor = animation.getAnimatedValue(keyPropertyColor) as Int
-        animationColorReverse = animation.getAnimatedValue(keyPropertyColorReverse) as Int
-
-        invalidate()
-    }
-
-    private fun drawIndicator(canvas: Canvas, position: Int) {
-
-        val x = if (scrollableIndication) {
-            when (position + bias) {
-                in 0 until dotCount -> xCoordinates[position + bias]
-                -1 -> xCoordinates[0] - dotSpace
-                dotCount -> xCoordinates[dotCount - 1] + dotSpace
-                else -> -dotSpace
-            } - animationMoveFactor
-        } else {
-            xCoordinates[position]
-        }
-
-        val y = (height / 2).toFloat()
-
-        val radius = if (scrollableIndication) {
-            when {
-                x < cursorStartX ->
-                    dotSize * sqrt((x - viewPaddingStart) / (cursorStartX - viewPaddingStart)) / 2
-
-                x > cursorEndX ->
-                    dotSize * sqrt((viewPaddingStart + viewWidth - x) / (viewPaddingStart + viewWidth - cursorEndX)) / 2
-
-                else -> dotSize / 2
-            }
-        } else {
-            dotSize / 2
-        }
-
-        paint.color = when (position) {
-            currentSelection -> animationColorReverse
-            newSelection -> animationColor
-            else -> dotDefaultColor
-        }
-
-        canvas.drawCircle(x, y, radius, paint)
-    }
-
-    private fun pageScrolled(position: Int, positionOffset: Float) {
-
-        reverseAnimation = position < currentSelection && positionOffset != 0F
-
-        newSelection = when {
-            reverseAnimation -> currentSelection - 1
-            else -> currentSelection + 1
-        }
-
-        if (!reverseAnimation && position != currentSelection ||
-                reverseAnimation && position != currentSelection - 1) {
-            pageSelected(Math.round(position + positionOffset))
-        }
-
-        if (scrollableIndication) {
-            canScroll = !reverseAnimation && currentSelection + bias == cursorEndPosition ||
-                    reverseAnimation && currentSelection + bias == cursorStartPosition
-        }
-
-        animator?.currentPlayTime = (animationDuration * when {
-            reverseAnimation -> 1 - positionOffset
-            else -> positionOffset
-        }).toLong()
-    }
-
-    private fun pageSelected(position: Int) {
-        currentSelection = position
-        fixBias()
-    }
-
-    private fun fixBias() {
-        val fix = when {
-            currentSelection > cursorEndPosition - bias ->
-                currentSelection - cursorEndPosition + bias
-
-            currentSelection < cursorStartPosition - bias ->
-                currentSelection - cursorStartPosition + bias
-
-            else -> 0
-        }
-
-        bias -= fix
-    }
-
-    private fun onDotTouch(event: MotionEvent?): Boolean {
-        event?.let {
-            when {
-                it.actionMasked == MotionEvent.ACTION_DOWN -> {
-                    touchStart = it.x
-                    return true
-                }
-
-                it.actionMasked == MotionEvent.ACTION_UP -> {
-                    for (position: Int in 0 until touchRanges.size) {
-                        if (it.x in touchRanges[position] && touchStart in touchRanges[position]) {
-                            setCurrentItem(position - bias)
-                            return true
-                        }
-                    }
-                }
-            }
-        }
-        return false
-    }
-
-    private fun setCurrentItem(position: Int) {
-        if (currentSelection == position || position < 0 || position >= totalDotCount) {
-            return
-        }
-
-        viewPager?.setCurrentItem(position, true)
-    }
+		val widthMode = MeasureSpec.getMode(widthMeasureSpec)
+		val widthSize = MeasureSpec.getSize(widthMeasureSpec)
+		val heightMode = MeasureSpec.getMode(heightMeasureSpec)
+		val heightSize = MeasureSpec.getSize(heightMeasureSpec)
+
+		val width: Int = when (widthMode) {
+			MeasureSpec.EXACTLY -> widthSize
+			MeasureSpec.AT_MOST -> Math.min(viewWidth.toInt(), widthSize)
+			else -> viewWidth.toInt()
+		}
+
+		val height: Int = when (heightMode) {
+			MeasureSpec.EXACTLY -> heightSize
+			MeasureSpec.AT_MOST -> Math.min(viewHeight.toInt(), heightSize)
+			else -> viewHeight.toInt()
+		}
+
+		fixPadding((width - viewWidth.toInt()) / 2,
+				(height - viewHeight.toInt()) / 2)
+
+		setupCursor()
+
+		measureCoordinates()
+
+		setMeasuredDimension(viewWidth.toInt() + viewPaddingStart + viewPaddingEnd,
+				viewHeight.toInt() + viewPaddingTop + viewPaddingBottom)
+	}
+
+	override fun onDraw(canvas: Canvas) {
+		for (position: Int in 0 until totalDotCount) {
+			drawIndicator(canvas, position)
+		}
+	}
+
+	@SuppressLint("ClickableViewAccessibility")
+	override fun onTouchEvent(event: MotionEvent?): Boolean {
+		return if (pageNavigationEnabled) {
+			onDotTouch(event)
+		} else {
+			false
+		}
+	}
+
+	override fun onPageScrollStateChanged(state: Int) {
+		//
+	}
+
+	override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+		pageScrolled(position, positionOffset)
+	}
+
+	override fun onPageSelected(position: Int) {
+		//
+	}
+
+	fun setupWithViewPager(viewPager: ViewPager) {
+
+		this.viewPager = viewPager
+
+		viewPager.adapter?.let {
+			totalDotCount = it.count
+			currentSelection = viewPager.currentItem
+
+			scrollableIndication = totalDotCount > dotCount
+
+			if (scrollableIndication && dotCount < minDotCount) {
+				dotCount = minDotCount
+			}
+
+			if (!scrollableIndication) {
+				dotCount = totalDotCount
+			}
+
+			viewPager.addOnPageChangeListener(this)
+		}
+	}
+
+	private fun setupAnimations() {
+		val propertyMoveForwardFactor =
+				PropertyValuesHolder.ofFloat(keyPropertyMoveFactor, 0F, dotSpace)
+
+		val propertyColor =
+				PropertyValuesHolder.ofObject(keyPropertyColor, ArgbEvaluator(), dotDefaultColor, dotSelectedColor)
+
+		val propertyColorReverse =
+				PropertyValuesHolder.ofObject(keyPropertyColorReverse, ArgbEvaluator(), dotSelectedColor, dotDefaultColor)
+
+		animator?.let {
+			it.setValues(propertyMoveForwardFactor,
+					propertyColor,
+					propertyColorReverse)
+			it.interpolator = AccelerateDecelerateInterpolator()
+			it.duration = animationDuration
+			it.addUpdateListener { animation -> updateValues(animation) }
+		}
+	}
+
+	private fun setupPadding() {
+
+		viewPaddingStart = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+			paddingStart
+		} else {
+			paddingLeft
+		}
+
+		viewPaddingEnd = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+			paddingEnd
+		} else {
+			paddingRight
+		}
+
+		viewPaddingTop = paddingTop
+
+		viewPaddingBottom = paddingBottom
+	}
+
+	private fun fixPadding(horizontalFix: Int, verticalFix: Int) {
+
+		if (horizontalFix > 0) {
+			viewPaddingStart = horizontalFix
+			viewPaddingEnd = horizontalFix
+		}
+
+		if (verticalFix > 0) {
+			viewPaddingTop = verticalFix
+			viewPaddingBottom = verticalFix
+		}
+	}
+
+	private fun setupCursor() {
+		cursorStartPosition = 2
+		cursorEndPosition = dotCount - 3
+		cursorStartX = viewPaddingStart + (0.5F + cursorStartPosition) * dotSpace
+		cursorEndX = viewPaddingStart + (0.5F + cursorEndPosition) * dotSpace
+	}
+
+	private fun measureCoordinates() {
+		xCoordinates = FloatArray(dotCount)
+		for (position: Int in 0 until xCoordinates.size) {
+			xCoordinates[position] = viewPaddingStart + dotSpace * position + dotSpace / 2
+		}
+
+		if (pageNavigationEnabled) {
+			touchRanges = Array(dotCount) { 0F..0F }
+			for (position: Int in 0 until touchRanges.size) {
+				touchRanges[position] = xCoordinates[position] - (dotSize + dotSpace) / 4..xCoordinates[position] + (dotSize + dotSpace) / 4
+			}
+		}
+	}
+
+	private fun updateValues(animation: ValueAnimator) {
+		animationMoveFactor = if (canScroll) {
+			when {
+				reverseAnimation -> -(animation.getAnimatedValue(keyPropertyMoveFactor) as Float)
+				else -> animation.getAnimatedValue(keyPropertyMoveFactor) as Float
+			}
+		} else {
+			0F
+		}
+
+		animationColor = animation.getAnimatedValue(keyPropertyColor) as Int
+		animationColorReverse = animation.getAnimatedValue(keyPropertyColorReverse) as Int
+
+		invalidate()
+	}
+
+	private fun drawIndicator(canvas: Canvas, position: Int) {
+
+		val x = if (scrollableIndication) {
+			when (position + bias) {
+				in 0 until dotCount -> xCoordinates[position + bias]
+				-1 -> xCoordinates[0] - dotSpace
+				dotCount -> xCoordinates[dotCount - 1] + dotSpace
+				else -> -dotSpace
+			} - animationMoveFactor
+		} else {
+			xCoordinates[position]
+		}
+
+		val y = (height / 2).toFloat()
+
+		val radius = if (scrollableIndication) {
+			when {
+				x < cursorStartX ->
+					dotSize * sqrt((x - viewPaddingStart) / (cursorStartX - viewPaddingStart)) / 2
+
+				x > cursorEndX ->
+					dotSize * sqrt((viewPaddingStart + viewWidth - x) / (viewPaddingStart + viewWidth - cursorEndX)) / 2
+
+				else -> dotSize / 2
+			}
+		} else {
+			dotSize / 2
+		}
+
+		paint.color = when (position) {
+			currentSelection -> animationColorReverse
+			newSelection -> animationColor
+			else -> dotDefaultColor
+		}
+
+		canvas.drawCircle(x, y, radius, paint)
+	}
+
+	private fun pageScrolled(position: Int, positionOffset: Float) {
+
+		reverseAnimation = position < currentSelection && positionOffset != 0F
+
+		newSelection = when {
+			reverseAnimation -> currentSelection - 1
+			else -> currentSelection + 1
+		}
+
+		if (!reverseAnimation && position != currentSelection ||
+				reverseAnimation && position != currentSelection - 1) {
+			pageSelected(Math.round(position + positionOffset))
+		}
+
+		if (scrollableIndication) {
+			canScroll = !reverseAnimation && currentSelection + bias == cursorEndPosition ||
+					reverseAnimation && currentSelection + bias == cursorStartPosition
+		}
+
+		animator?.currentPlayTime = (animationDuration * when {
+			reverseAnimation -> 1 - positionOffset
+			else -> positionOffset
+		}).toLong()
+	}
+
+	private fun pageSelected(position: Int) {
+		if (position == currentSelection) {
+			return
+		}
+
+		currentSelection = position
+		fixBias()
+	}
+
+	private fun fixBias() {
+		val fix = when {
+			currentSelection > cursorEndPosition - bias ->
+				currentSelection - cursorEndPosition + bias
+
+			currentSelection < cursorStartPosition - bias ->
+				currentSelection - cursorStartPosition + bias
+
+			else -> 0
+		}
+
+		bias -= fix
+	}
+
+	private fun onDotTouch(event: MotionEvent?): Boolean {
+		event?.let {
+			when {
+				it.actionMasked == MotionEvent.ACTION_DOWN -> {
+					touchStart = it.x
+					return true
+				}
+
+				it.actionMasked == MotionEvent.ACTION_UP -> {
+					for (position: Int in 0 until touchRanges.size) {
+						if (it.x in touchRanges[position] && touchStart in touchRanges[position]) {
+							setCurrentItem(position - bias)
+							return true
+						}
+					}
+				}
+			}
+		}
+		return false
+	}
+
+	private fun setCurrentItem(position: Int) {
+		if (currentSelection == position || position < 0 || position >= totalDotCount) {
+			return
+		}
+
+		viewPager?.setCurrentItem(position, true)
+	}
 }
