@@ -31,6 +31,11 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
 	private val paint = Paint()
 
+	private val coordinates by lazy { initCoordinates() }
+	private val touchRanges by lazy { initTouchRanges() }
+
+	private val animator by lazy { ValueAnimator() }
+
 	private var viewPaddingTop = 0
 	private var viewPaddingBottom = 0
 	private var viewPaddingStart = 0
@@ -65,11 +70,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
 	private var touchStart = 0F
 
-	private var coordinates = floatArrayOf()
-	private var touchRanges: Array<ClosedFloatingPointRange<Float>> = arrayOf()
-
 	private var viewPager: ViewPager? = null
-	private var animator: ValueAnimator? = null
 
 	init {
 		context.theme.obtainStyledAttributes(attrs, R.styleable.FlexiblePageIndicator, 0, 0).apply {
@@ -99,8 +100,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 						true)
 
 				paint.isAntiAlias = true
-
-				animator = ValueAnimator()
 
 				setupAnimations()
 
@@ -140,8 +139,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
 		setupCursor()
 
-		measureCoordinates()
-
 		setMeasuredDimension(viewWidth.toInt() + viewPaddingStart + viewPaddingEnd,
 				viewHeight.toInt() + viewPaddingTop + viewPaddingBottom)
 	}
@@ -150,23 +147,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 		for (position: Int in 0 until totalDotCount) {
 			drawIndicator(canvas, position)
 		}
-	}
-
-	@SuppressLint("ClickableViewAccessibility")
-	override fun onTouchEvent(event: MotionEvent?): Boolean {
-		return pageNavigationEnabled && onDotTouch(event)
-	}
-
-	override fun onPageScrollStateChanged(state: Int) {
-		//
-	}
-
-	override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-		pageScrolled(position, positionOffset)
-	}
-
-	override fun onPageSelected(position: Int) {
-		//
 	}
 
 	fun setupWithViewPager(viewPager: ViewPager) {
@@ -191,6 +171,18 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 		}
 	}
 
+	private fun initCoordinates(): FloatArray {
+		return FloatArray(dotCount) { position ->
+			viewPaddingStart + dotSpace * position + dotSpace / 2
+		}
+	}
+
+	private fun initTouchRanges(): Array<ClosedFloatingPointRange<Float>> {
+		return Array(dotCount) { position ->
+			(coordinates[position] - (dotSize + dotSpace) / 4)..(coordinates[position] + (dotSize + dotSpace) / 4)
+		}
+	}
+
 	private fun setupAnimations() {
 		val propertyMoveForwardFactor =
 				PropertyValuesHolder.ofFloat(keyPropertyMoveFactor, 0F, dotSpace)
@@ -201,7 +193,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 		val propertyColorReverse =
 				PropertyValuesHolder.ofObject(keyPropertyColorReverse, ArgbEvaluator(), dotSelectedColor, dotDefaultColor)
 
-		animator?.let {
+		animator.let {
 			it.setValues(propertyMoveForwardFactor,
 					propertyColor,
 					propertyColorReverse)
@@ -230,6 +222,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 		viewPaddingBottom = paddingBottom
 	}
 
+	private fun setupCursor() {
+		cursorStartPosition = 2
+		cursorEndPosition = dotCount - 3
+		cursorStartX = viewPaddingStart + (0.5F + cursorStartPosition) * dotSpace
+		cursorEndX = viewPaddingStart + (0.5F + cursorEndPosition) * dotSpace
+	}
+
 	private fun fixPadding(horizontalFix: Int, verticalFix: Int) {
 
 		if (horizontalFix > 0) {
@@ -241,23 +240,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 			viewPaddingTop = verticalFix
 			viewPaddingBottom = verticalFix
 		}
-	}
-
-	private fun setupCursor() {
-		cursorStartPosition = 2
-		cursorEndPosition = dotCount - 3
-		cursorStartX = viewPaddingStart + (0.5F + cursorStartPosition) * dotSpace
-		cursorEndX = viewPaddingStart + (0.5F + cursorEndPosition) * dotSpace
-	}
-
-	private fun measureCoordinates() {
-		coordinates = FloatArray(dotCount) { position -> viewPaddingStart + dotSpace * position + dotSpace / 2 }
-
-		if (!pageNavigationEnabled) {
-			return
-		}
-
-		touchRanges = Array(dotCount) { position -> coordinates[position] - (dotSize + dotSpace) / 4..coordinates[position] + (dotSize + dotSpace) / 4 }
 	}
 
 	private fun updateValues(animation: ValueAnimator) {
@@ -274,6 +256,20 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 		animationColorReverse = animation.getAnimatedValue(keyPropertyColorReverse) as Int
 
 		invalidate()
+	}
+
+	private fun fixBias() {
+		val fix = when {
+			currentSelection > cursorEndPosition - bias ->
+				currentSelection - cursorEndPosition + bias
+
+			currentSelection < cursorStartPosition - bias ->
+				currentSelection - cursorStartPosition + bias
+
+			else -> 0
+		}
+
+		bias -= fix
 	}
 
 	private fun drawIndicator(canvas: Canvas, position: Int) {
@@ -333,7 +329,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 					reverseAnimation && currentSelection + bias == cursorStartPosition
 		}
 
-		animator?.currentPlayTime = (animationDuration * when {
+		animator.currentPlayTime = (animationDuration * when {
 			reverseAnimation -> 1 - positionOffset
 			else -> positionOffset
 		}).toLong()
@@ -346,20 +342,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
 		currentSelection = position
 		fixBias()
-	}
-
-	private fun fixBias() {
-		val fix = when {
-			currentSelection > cursorEndPosition - bias ->
-				currentSelection - cursorEndPosition + bias
-
-			currentSelection < cursorStartPosition - bias ->
-				currentSelection - cursorStartPosition + bias
-
-			else -> 0
-		}
-
-		bias -= fix
 	}
 
 	private fun onDotTouch(event: MotionEvent?): Boolean {
@@ -389,5 +371,22 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 		}
 
 		viewPager?.setCurrentItem(position, true)
+	}
+
+	@SuppressLint("ClickableViewAccessibility")
+	override fun onTouchEvent(event: MotionEvent?): Boolean {
+		return pageNavigationEnabled && onDotTouch(event)
+	}
+
+	override fun onPageScrollStateChanged(state: Int) {
+		//
+	}
+
+	override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+		pageScrolled(position, positionOffset)
+	}
+
+	override fun onPageSelected(position: Int) {
+		//
 	}
 }
