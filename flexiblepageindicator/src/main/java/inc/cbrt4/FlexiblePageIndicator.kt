@@ -80,7 +80,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 				dotSelectedColor = getColor(R.styleable.FlexiblePageIndicator_dotColorSelected,
 						colorSelected)
 
-				dotCount = getInteger(R.styleable.FlexiblePageIndicator_dotCount, defaultDotCount)
+				dotCount = getInteger(R.styleable.FlexiblePageIndicator_dotCount,
+						defaultDotCount)
 
 				dotSize = getDimension(R.styleable.FlexiblePageIndicator_dotSize,
 						resources.getDimension(R.dimen.dot_size_default))
@@ -153,11 +154,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
 	@SuppressLint("ClickableViewAccessibility")
 	override fun onTouchEvent(event: MotionEvent?): Boolean {
-		return if (pageNavigationEnabled) {
-			onDotTouch(event)
-		} else {
-			false
-		}
+		return pageNavigationEnabled && onDotTouch(event)
 	}
 
 	override fun onPageScrollStateChanged(state: Int) {
@@ -254,17 +251,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	}
 
 	private fun measureCoordinates() {
-		xCoordinates = FloatArray(dotCount)
-		for (position: Int in 0 until xCoordinates.size) {
-			xCoordinates[position] = viewPaddingStart + dotSpace * position + dotSpace / 2
+		xCoordinates = FloatArray(dotCount) { position -> viewPaddingStart + dotSpace * position + dotSpace / 2 }
+
+		if (!pageNavigationEnabled) {
+			return
 		}
 
-		if (pageNavigationEnabled) {
-			touchRanges = Array(dotCount) { 0F..0F }
-			for (position: Int in 0 until touchRanges.size) {
-				touchRanges[position] = xCoordinates[position] - (dotSize + dotSpace) / 4..xCoordinates[position] + (dotSize + dotSpace) / 4
-			}
-		}
+		touchRanges = Array(dotCount) { position -> xCoordinates[position] - (dotSize + dotSpace) / 4..xCoordinates[position] + (dotSize + dotSpace) / 4 }
 	}
 
 	private fun updateValues(animation: ValueAnimator) {
