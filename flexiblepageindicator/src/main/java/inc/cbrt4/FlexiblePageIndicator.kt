@@ -65,7 +65,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
 	private var touchStart = 0F
 
-	private var xCoordinates = floatArrayOf()
+	private var coordinates = floatArrayOf()
 	private var touchRanges: Array<ClosedFloatingPointRange<Float>> = arrayOf()
 
 	private var viewPager: ViewPager? = null
@@ -251,13 +251,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	}
 
 	private fun measureCoordinates() {
-		xCoordinates = FloatArray(dotCount) { position -> viewPaddingStart + dotSpace * position + dotSpace / 2 }
+		coordinates = FloatArray(dotCount) { position -> viewPaddingStart + dotSpace * position + dotSpace / 2 }
 
 		if (!pageNavigationEnabled) {
 			return
 		}
 
-		touchRanges = Array(dotCount) { position -> xCoordinates[position] - (dotSize + dotSpace) / 4..xCoordinates[position] + (dotSize + dotSpace) / 4 }
+		touchRanges = Array(dotCount) { position -> coordinates[position] - (dotSize + dotSpace) / 4..coordinates[position] + (dotSize + dotSpace) / 4 }
 	}
 
 	private fun updateValues(animation: ValueAnimator) {
@@ -280,13 +280,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
 		val x = if (scrollableIndication) {
 			when (position + bias) {
-				in 0 until dotCount -> xCoordinates[position + bias]
-				-1 -> xCoordinates[0] - dotSpace
-				dotCount -> xCoordinates[dotCount - 1] + dotSpace
+				in 0 until dotCount -> coordinates[position + bias]
+				-1 -> coordinates[0] - dotSpace
+				dotCount -> coordinates[dotCount - 1] + dotSpace
 				else -> -dotSpace
 			} - animationMoveFactor
 		} else {
-			xCoordinates[position]
+			coordinates[position]
 		}
 
 		val y = (height / 2).toFloat()
