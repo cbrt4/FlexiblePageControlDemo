@@ -312,7 +312,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
 	private fun pageScrolled(position: Int, positionOffset: Float) {
 
-		reverseAnimation = position < currentSelection && positionOffset != 0F
+		reverseAnimation = currentSelection > position + positionOffset
 
 		newSelection = when {
 			reverseAnimation -> currentSelection - 1
@@ -387,6 +387,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	}
 
 	override fun onPageSelected(position: Int) {
-		//
+		//currentSelection = position
 	}
 }
