@@ -162,6 +162,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
 			if (!scrollableIndication) {
 				dotCount = totalDotCount
+				bias = 0
 			}
 
 			viewPager.addOnPageChangeListener(this)
@@ -256,6 +257,10 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	}
 
 	private fun fixBias() {
+		if (!scrollableIndication) {
+			return
+		}
+
 		val fix = when {
 			currentSelection > cursorEndPosition - bias ->
 				currentSelection - cursorEndPosition + bias
@@ -309,15 +314,15 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
 	private fun pageScrolled(position: Int, positionOffset: Float) {
 
-		reverseAnimation = position < currentSelection && positionOffset != 0F
+		reverseAnimation = currentSelection > position && positionOffset != 0F
 
 		newSelection = when {
 			reverseAnimation -> currentSelection - 1
 			else -> currentSelection + 1
 		}
 
-		if (!reverseAnimation && position != currentSelection ||
-				reverseAnimation && position != currentSelection - 1) {
+		if (!reverseAnimation && currentSelection != position ||
+				reverseAnimation && currentSelection != position + 1) {
 			pageSelected(Math.round(position + positionOffset))
 		}
 
@@ -384,6 +389,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	}
 
 	override fun onPageSelected(position: Int) {
-		//currentSelection = position
+		//
 	}
 }
