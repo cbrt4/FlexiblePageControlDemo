@@ -31,6 +31,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
 	private val coordinates by lazy { initCoordinates() }
 	private val touchRanges by lazy { initTouchRanges() }
+	private val animationDuration by lazy { 1000L }
 
 	private val paint by lazy { Paint(Paint.ANTI_ALIAS_FLAG) }
 	private val animator by lazy { ValueAnimator() }
@@ -48,7 +49,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	private var dotCount = 0
 	private var dotSize = 0F
 	private var dotSpace = 0F
-	private var animationDuration = 0L
 	private var pageNavigationEnabled = false
 
 	private var totalDotCount = 0
@@ -92,8 +92,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 				if (dotSpace < dotSize * 1.2F) {
 					dotSpace = dotSize * 1.2F
 				}
-
-				animationDuration = 1000L
 
 				pageNavigationEnabled = getBoolean(R.styleable.FlexiblePageIndicator_pageNavigationEnabled,
 						true)
