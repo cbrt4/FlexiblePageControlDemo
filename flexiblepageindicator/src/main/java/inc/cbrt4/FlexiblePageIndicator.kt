@@ -164,12 +164,12 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 		}
 	}
 
-	private fun initCoordinates(): FloatArray =
-            FloatArray(dotCount) { position -> viewPaddingStart + dotSpace * position + dotSpace / 2
+	private fun initCoordinates() = FloatArray(dotCount) {
+        position -> viewPaddingStart + dotSpace * position + dotSpace / 2
 	}
 
-	private fun initTouchRanges(): Array<ClosedFloatingPointRange<Float>> =
-            Array(dotCount) { position -> (coordinates[position] - (dotSize + dotSpace) / 4)..
+	private fun initTouchRanges() = Array(dotCount) {
+        position -> (coordinates[position] - (dotSize + dotSpace) / 4)..
                     (coordinates[position] + (dotSize + dotSpace) / 4)
 	}
 
