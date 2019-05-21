@@ -164,16 +164,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 		}
 	}
 
-	private fun initCoordinates(): FloatArray {
-		return FloatArray(dotCount) { position ->
-			viewPaddingStart + dotSpace * position + dotSpace / 2
-		}
+	private fun initCoordinates(): FloatArray =
+            FloatArray(dotCount) { position -> viewPaddingStart + dotSpace * position + dotSpace / 2
 	}
 
-	private fun initTouchRanges(): Array<ClosedFloatingPointRange<Float>> {
-		return Array(dotCount) { position ->
-			(coordinates[position] - (dotSize + dotSpace) / 4)..(coordinates[position] + (dotSize + dotSpace) / 4)
-		}
+	private fun initTouchRanges(): Array<ClosedFloatingPointRange<Float>> =
+            Array(dotCount) { position -> (coordinates[position] - (dotSize + dotSpace) / 4)..
+                    (coordinates[position] + (dotSize + dotSpace) / 4)
 	}
 
 	private fun setupAnimations() {
@@ -254,7 +251,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 			return
 		}
 
-		val fix = when {
+		bias -= when {
 			currentSelection > cursorEndPosition - bias ->
 				currentSelection - cursorEndPosition + bias
 
@@ -263,8 +260,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
 			else -> 0
 		}
-
-		bias -= fix
 	}
 
 	private fun drawIndicator(canvas: Canvas, position: Int) {
