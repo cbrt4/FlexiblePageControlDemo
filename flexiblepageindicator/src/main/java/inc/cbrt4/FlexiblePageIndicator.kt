@@ -28,10 +28,10 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
 	private val minDotCount = 5
 	private val defaultDotCount = 7
+	private val animationDuration = 1000L
 
 	private val coordinates by lazy { initCoordinates() }
 	private val touchRanges by lazy { initTouchRanges() }
-	private val animationDuration by lazy { 1000L }
 
 	private val paint by lazy { Paint(Paint.ANTI_ALIAS_FLAG) }
 	private val animator by lazy { ValueAnimator() }
@@ -66,7 +66,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	private var cursorEndPosition = 0
 	private var cursorStartX = 0F
 	private var cursorEndX = 0F
-
 	private var touchStart = 0F
 
 	private var viewPager: ViewPager? = null
@@ -106,7 +105,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
 	@SuppressLint("SwitchIntDef")
 	override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-
 		setupPadding()
 
 		viewWidth = dotCount * dotSpace
@@ -145,7 +143,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	}
 
 	fun setupWithViewPager(viewPager: ViewPager) {
-
 		this.viewPager = viewPager
 
 		viewPager.adapter?.let {
@@ -200,7 +197,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	}
 
 	private fun setupPadding() {
-
 		viewPaddingStart = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
 			paddingStart
 		} else {
@@ -226,7 +222,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	}
 
 	private fun fixPadding(horizontalFix: Int, verticalFix: Int) {
-
 		if (horizontalFix > 0) {
 			viewPaddingStart = horizontalFix
 			viewPaddingEnd = horizontalFix
@@ -273,7 +268,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	}
 
 	private fun drawIndicator(canvas: Canvas, position: Int) {
-
 		val x = if (scrollableIndication) {
 			when (position + bias) {
 				in 0 until dotCount -> coordinates[position + bias]
@@ -311,7 +305,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	}
 
 	private fun pageScrolled(position: Int, positionOffset: Float) {
-
 		reverseAnimation = currentSelection > position && positionOffset != 0F
 
 		newSelection = when {
