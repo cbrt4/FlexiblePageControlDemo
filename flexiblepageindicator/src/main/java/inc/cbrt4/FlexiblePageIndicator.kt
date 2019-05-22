@@ -30,6 +30,12 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	private val defaultDotCount = 7
 	private val animationDuration = 1000L
 
+	private val dotDefaultColor: Int
+	private val dotSelectedColor: Int
+	private val dotSize: Float
+	private val dotSpace: Float
+	private val pageNavigationEnabled: Boolean
+
 	private val coordinates by lazy { initCoordinates() }
 	private val touchRanges by lazy { initTouchRanges() }
 
@@ -44,13 +50,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	private var viewWidth = 0F
 	private var viewHeight = 0F
 
-	private var dotDefaultColor = 0
-	private var dotSelectedColor = 0
 	private var dotCount = 0
-	private var dotSize = 0F
-	private var dotSpace = 0F
-	private var pageNavigationEnabled = false
-
 	private var totalDotCount = 0
 	private var bias = 2
 	private var currentSelection = 0
@@ -73,23 +73,25 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	init {
 		context.theme.obtainStyledAttributes(attrs, R.styleable.FlexiblePageIndicator, 0, 0).apply {
 			try {
+				dotCount = getInteger(R.styleable.FlexiblePageIndicator_dotCount,
+						defaultDotCount)
+
 				dotDefaultColor = getColor(R.styleable.FlexiblePageIndicator_dotColorDefault,
 						colorDefault)
 
 				dotSelectedColor = getColor(R.styleable.FlexiblePageIndicator_dotColorSelected,
 						colorSelected)
 
-				dotCount = getInteger(R.styleable.FlexiblePageIndicator_dotCount,
-						defaultDotCount)
-
 				dotSize = getDimension(R.styleable.FlexiblePageIndicator_dotSize,
 						resources.getDimension(R.dimen.dot_size_default))
 
-				dotSpace = getDimension(R.styleable.FlexiblePageIndicator_dotSpace,
+				val givenDotSpace = getDimension(R.styleable.FlexiblePageIndicator_dotSpace,
 						resources.getDimension(R.dimen.dot_space_default))
 
-				if (dotSpace < dotSize * 1.2F) {
-					dotSpace = dotSize * 1.2F
+				dotSpace = if (givenDotSpace > dotSize) {
+					givenDotSpace
+				} else {
+					dotSize * 1.5F
 				}
 
 				pageNavigationEnabled = getBoolean(R.styleable.FlexiblePageIndicator_pageNavigationEnabled,
@@ -164,13 +166,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 		}
 	}
 
-	private fun initCoordinates() = FloatArray(dotCount) {
-        position -> viewPaddingStart + dotSpace * position + dotSpace / 2
+	private fun initCoordinates() = FloatArray(dotCount) { position ->
+		viewPaddingStart + dotSpace * position + dotSpace / 2
 	}
 
-	private fun initTouchRanges() = Array(dotCount) {
-        position -> (coordinates[position] - (dotSize + dotSpace) / 4)..
-                    (coordinates[position] + (dotSize + dotSpace) / 4)
+	private fun initTouchRanges() = Array(dotCount) { position ->
+		(coordinates[position] - dotSpace / 3)..
+				(coordinates[position] + dotSpace / 3)
 	}
 
 	private fun setupAnimations() {
