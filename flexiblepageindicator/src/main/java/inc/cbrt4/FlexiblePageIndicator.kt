@@ -36,11 +36,11 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	private val dotSpace: Float
 	private val pageNavigationEnabled: Boolean
 
+	private val paint: Paint
+	private val animator: ValueAnimator
+
 	private val coordinates by lazy { initCoordinates() }
 	private val touchRanges by lazy { initTouchRanges() }
-
-	private val paint by lazy { Paint(Paint.ANTI_ALIAS_FLAG) }
-	private val animator by lazy { ValueAnimator() }
 
 	private var viewPaddingTop = 0
 	private var viewPaddingBottom = 0
@@ -97,7 +97,9 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 				pageNavigationEnabled = getBoolean(R.styleable.FlexiblePageIndicator_pageNavigationEnabled,
 						true)
 
-				setupAnimations()
+				paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+				animator = valueAnimator()
 
 			} finally {
 				recycle()
@@ -175,7 +177,7 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 				(coordinates[position] + dotSpace / 3)
 	}
 
-	private fun setupAnimations() {
+	private fun valueAnimator(): ValueAnimator {
 		val propertyMoveForwardFactor =
 				PropertyValuesHolder.ofFloat(keyPropertyMoveFactor, 0F, dotSpace)
 
@@ -185,14 +187,18 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 		val propertyColorReverse =
 				PropertyValuesHolder.ofObject(keyPropertyColorReverse, ArgbEvaluator(), dotSelectedColor, dotDefaultColor)
 
-		animator.let {
-			it.setValues(propertyMoveForwardFactor,
+		val animator = ValueAnimator()
+
+		animator.run {
+			setValues(propertyMoveForwardFactor,
 					propertyColor,
 					propertyColorReverse)
-			it.interpolator = AccelerateDecelerateInterpolator()
-			it.duration = animationDuration
-			it.addUpdateListener { animation -> updateValues(animation) }
+			interpolator = AccelerateDecelerateInterpolator()
+			duration = animationDuration
+			addUpdateListener { animation -> updateValues(animation) }
 		}
+
+		return animator
 	}
 
 	private fun setupPadding() {
