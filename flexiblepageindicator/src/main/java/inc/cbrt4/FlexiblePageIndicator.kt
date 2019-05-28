@@ -340,25 +340,24 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 		fixBias()
 	}
 
-	private fun onDotTouch(event: MotionEvent?): Boolean {
-		event?.let {
-			when {
-				it.actionMasked == MotionEvent.ACTION_DOWN -> {
-					touchStart = it.x
-					return true
+	private fun onDotTouch(event: MotionEvent) {
+		event.run {
+			when (actionMasked) {
+				MotionEvent.ACTION_DOWN -> {
+					touchStart = x
 				}
 
-				it.actionMasked == MotionEvent.ACTION_UP -> {
-					for (position: Int in 0 until touchRanges.size) {
-						if (it.x in touchRanges[position] && touchStart in touchRanges[position]) {
-							setCurrentItem(position - bias)
-							return true
+				MotionEvent.ACTION_UP -> {
+					if (y.toInt() in paddingTop..height - paddingBottom) {
+						for ((index, range) in touchRanges.withIndex()) {
+							if (x in range && touchStart in range) {
+								setCurrentItem(index - bias)
+							}
 						}
 					}
 				}
 			}
 		}
-		return false
 	}
 
 	private fun setCurrentItem(position: Int) {
@@ -370,8 +369,12 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	}
 
 	@SuppressLint("ClickableViewAccessibility")
-	override fun onTouchEvent(event: MotionEvent?): Boolean {
-		return pageNavigationEnabled && onDotTouch(event)
+	override fun onTouchEvent(event: MotionEvent): Boolean {
+		if (pageNavigationEnabled) {
+			onDotTouch(event)
+		}
+
+		return pageNavigationEnabled
 	}
 
 	override fun onPageScrollStateChanged(state: Int) {
