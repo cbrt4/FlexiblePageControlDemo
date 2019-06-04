@@ -4,10 +4,6 @@ apply plugin: 'kotlin-android'
 
 apply plugin: 'kotlin-android-extensions'
 
-apply plugin: 'com.github.dcendents.android-maven'
-
-group = 'com.github.cbrt4'
-
 android {
 	compileSdkVersion 28
 
@@ -28,6 +24,9 @@ android {
 		}
 	}
 
+	lintOptions {
+		lintConfig file("lint.xml")
+	}
 }
 
 dependencies {
@@ -40,7 +39,4 @@ dependencies {
 	testImplementation 'junit:junit:4.12'
 	androidTestImplementation 'com.android.support.test:runner:1.0.2'
 	androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-}
-repositories {
-	mavenCentral()
 }

@@ -12,17 +12,29 @@ import kotlinx.android.synthetic.main.activity_main.*
 class MainActivity : AppCompatActivity() {
 
 	val colorArray: Array<Int> = arrayOf(
-			R.drawable.item_pager_1,
-			R.drawable.item_pager_2,
-			R.drawable.item_pager_3,
-			R.drawable.item_pager_4,
-			R.drawable.item_pager_5,
-			R.drawable.item_pager_6,
-			R.drawable.item_pager_7,
-			R.drawable.item_pager_8,
-			R.drawable.item_pager_9,
-			R.drawable.item_pager_10,
-			R.drawable.item_pager_11
+			R.color.colorViewPager0,
+			R.color.colorViewPager1,
+			R.color.colorViewPager2,
+			R.color.colorViewPager3,
+			R.color.colorViewPager4,
+			R.color.colorViewPager5,
+			R.color.colorViewPager6,
+			R.color.colorViewPager7,
+			R.color.colorViewPager8,
+			R.color.colorViewPager9,
+			R.color.colorViewPager10
+
+//			R.drawable.item_pager_1,
+//			R.drawable.item_pager_2,
+//			R.drawable.item_pager_3,
+//			R.drawable.item_pager_4,
+//			R.drawable.item_pager_5,
+//			R.drawable.item_pager_6,
+//			R.drawable.item_pager_7,
+//			R.drawable.item_pager_8,
+//			R.drawable.item_pager_9,
+//			R.drawable.item_pager_10,
+//			R.drawable.item_pager_11
 	)
 
 	override fun onCreate(savedInstanceState: Bundle?) {

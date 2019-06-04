@@ -3,7 +3,6 @@ package inc.cbrt4
 import android.animation.ArgbEvaluator
 import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -107,7 +106,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 		}
 	}
 
-	@SuppressLint("SwitchIntDef")
 	override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
 		setupPadding()
 
@@ -368,7 +366,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 		viewPager?.setCurrentItem(position, true)
 	}
 
-	@SuppressLint("ClickableViewAccessibility")
 	override fun onTouchEvent(event: MotionEvent): Boolean {
 		if (pageNavigationEnabled) {
 			onDotTouch(event)
