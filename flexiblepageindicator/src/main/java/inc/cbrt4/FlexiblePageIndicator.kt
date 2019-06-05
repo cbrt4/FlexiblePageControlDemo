@@ -171,8 +171,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	}
 
 	private fun initTouchRanges() = Array(dotCount) { position ->
-		(coordinates[position] - dotSpace / 3)..
-				(coordinates[position] + dotSpace / 3)
+		(coordinates[position] - dotSpace / 2)..
+				(coordinates[position] + dotSpace / 2)
 	}
 
 	private fun valueAnimator(): ValueAnimator {
@@ -346,11 +346,9 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 				}
 
 				MotionEvent.ACTION_UP -> {
-					if (y.toInt() in paddingTop..height - paddingBottom) {
-						for ((index, range) in touchRanges.withIndex()) {
-							if (x in range && touchStart in range) {
-								setCurrentItem(index - bias)
-							}
+					for ((index, range) in touchRanges.withIndex()) {
+						if (x in range && touchStart in range) {
+							setCurrentItem(index - bias)
 						}
 					}
 				}
