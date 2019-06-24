@@ -14,6 +14,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import inc.cbrt4.flexiblepageindicator.R
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(context, attrs), OnPageChangeListener {
@@ -315,12 +316,12 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
 		if (!reverseAnimation && currentSelection != position ||
 				reverseAnimation && currentSelection != position + 1) {
-			pageSelected(Math.round(position + positionOffset))
+			pageSelected((position + positionOffset).roundToInt())
 		}
 
 		if (scrollableIndication) {
-			canScroll = !reverseAnimation && currentSelection + bias == cursorEndPosition ||
-					reverseAnimation && currentSelection + bias == cursorStartPosition
+			canScroll = !reverseAnimation && currentSelection + bias >= cursorEndPosition ||
+					reverseAnimation && currentSelection + bias <= cursorStartPosition
 		}
 
 		animator.currentPlayTime = (animationDuration * when {
