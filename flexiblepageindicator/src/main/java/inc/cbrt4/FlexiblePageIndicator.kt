@@ -6,14 +6,14 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.os.Build
-import android.support.v4.view.ViewPager
-import android.support.v4.view.ViewPager.OnPageChangeListener
+import androidx.viewpager.widget.ViewPager
+import androidx.viewpager.widget.ViewPager.OnPageChangeListener
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import inc.cbrt4.flexiblepageindicator.R
+import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
@@ -120,13 +120,13 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 
 		val width: Int = when (widthMode) {
 			MeasureSpec.EXACTLY -> widthSize
-			MeasureSpec.AT_MOST -> Math.min(viewWidth.toInt(), widthSize)
+			MeasureSpec.AT_MOST -> min(viewWidth.toInt(), widthSize)
 			else -> viewWidth.toInt()
 		}
 
 		val height: Int = when (heightMode) {
 			MeasureSpec.EXACTLY -> heightSize
-			MeasureSpec.AT_MOST -> Math.min(viewHeight.toInt(), heightSize)
+			MeasureSpec.AT_MOST -> min(viewHeight.toInt(), heightSize)
 			else -> viewHeight.toInt()
 		}
 
@@ -201,20 +201,9 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	}
 
 	private fun setupPadding() {
-		viewPaddingStart = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-			paddingStart
-		} else {
-			paddingLeft
-		}
-
-		viewPaddingEnd = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-			paddingEnd
-		} else {
-			paddingRight
-		}
-
+		viewPaddingStart = paddingStart
+		viewPaddingEnd = paddingEnd
 		viewPaddingTop = paddingTop
-
 		viewPaddingBottom = paddingBottom
 	}
 

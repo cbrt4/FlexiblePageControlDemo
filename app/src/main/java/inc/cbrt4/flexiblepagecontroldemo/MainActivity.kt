@@ -1,8 +1,7 @@
 package inc.cbrt4.flexiblepagecontroldemo
 
 import android.os.Bundle
-import android.support.v4.view.PagerAdapter
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -56,7 +55,7 @@ class MainActivity : AppCompatActivity() {
 	}
 
 	private fun setupViewPager() {
-		val mainPagerAdapter = object : PagerAdapter() {
+		val mainPagerAdapter = object : androidx.viewpager.widget.PagerAdapter() {
 
 			override fun instantiateItem(container: ViewGroup, position: Int): Any {
 				val page = LayoutInflater.from(container.context)
