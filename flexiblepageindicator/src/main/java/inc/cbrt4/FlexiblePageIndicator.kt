@@ -6,18 +6,19 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
-import androidx.viewpager.widget.ViewPager
-import androidx.viewpager.widget.ViewPager.OnPageChangeListener
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
+import androidx.viewpager.widget.ViewPager
+import androidx.viewpager.widget.ViewPager.OnPageChangeListener
 import inc.cbrt4.flexiblepageindicator.R
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
-class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(context, attrs), OnPageChangeListener {
+class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(context, attrs),
+		OnPageChangeListener {
 
 	private val keyPropertyMoveFactor = "animationMoveFactor"
 	private val keyPropertyColor = "color"
@@ -71,21 +72,30 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	private var viewPager: ViewPager? = null
 
 	init {
-		context.theme.obtainStyledAttributes(attrs, R.styleable.FlexiblePageIndicator, 0, 0).apply {
+		context.theme.obtainStyledAttributes(
+				attrs,
+				R.styleable.FlexiblePageIndicator,
+				0,
+				0).apply {
 			try {
-				dotCount = getInteger(R.styleable.FlexiblePageIndicator_dotCount,
+				dotCount = getInteger(
+						R.styleable.FlexiblePageIndicator_dotCount,
 						defaultDotCount)
 
-				dotDefaultColor = getColor(R.styleable.FlexiblePageIndicator_dotColorDefault,
+				dotDefaultColor = getColor(
+						R.styleable.FlexiblePageIndicator_dotColorDefault,
 						colorDefault)
 
-				dotSelectedColor = getColor(R.styleable.FlexiblePageIndicator_dotColorSelected,
+				dotSelectedColor = getColor(
+						R.styleable.FlexiblePageIndicator_dotColorSelected,
 						colorSelected)
 
-				dotSize = getDimension(R.styleable.FlexiblePageIndicator_dotSize,
+				dotSize = getDimension(
+						R.styleable.FlexiblePageIndicator_dotSize,
 						resources.getDimension(R.dimen.dot_size_default))
 
-				val givenDotSpace = getDimension(R.styleable.FlexiblePageIndicator_dotSpace,
+				val givenDotSpace = getDimension(
+						R.styleable.FlexiblePageIndicator_dotSpace,
 						resources.getDimension(R.dimen.dot_space_default))
 
 				dotSpace = if (givenDotSpace > dotSize) {
@@ -94,7 +104,8 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 					dotSize * 1.5F
 				}
 
-				pageNavigationEnabled = getBoolean(R.styleable.FlexiblePageIndicator_pageNavigationEnabled,
+				pageNavigationEnabled = getBoolean(
+						R.styleable.FlexiblePageIndicator_pageNavigationEnabled,
 						true)
 
 				paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -113,18 +124,16 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 		viewWidth = dotCount * dotSpace
 		viewHeight = dotSpace
 
-		val widthMode = MeasureSpec.getMode(widthMeasureSpec)
 		val widthSize = MeasureSpec.getSize(widthMeasureSpec)
-		val heightMode = MeasureSpec.getMode(heightMeasureSpec)
 		val heightSize = MeasureSpec.getSize(heightMeasureSpec)
 
-		val width: Int = when (widthMode) {
+		val width: Int = when (MeasureSpec.getMode(widthMeasureSpec)) {
 			MeasureSpec.EXACTLY -> widthSize
 			MeasureSpec.AT_MOST -> min(viewWidth.toInt(), widthSize)
 			else -> viewWidth.toInt()
 		}
 
-		val height: Int = when (heightMode) {
+		val height: Int = when (MeasureSpec.getMode(heightMeasureSpec)) {
 			MeasureSpec.EXACTLY -> heightSize
 			MeasureSpec.AT_MOST -> min(viewHeight.toInt(), heightSize)
 			else -> viewHeight.toInt()
@@ -177,18 +186,24 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 	}
 
 	private fun valueAnimator(): ValueAnimator {
-		val propertyMoveForwardFactor =
-				PropertyValuesHolder.ofFloat(keyPropertyMoveFactor, 0F, dotSpace)
+		val propertyMoveForwardFactor = PropertyValuesHolder.ofFloat(
+				keyPropertyMoveFactor,
+				0F,
+				dotSpace)
 
-		val propertyColor =
-				PropertyValuesHolder.ofObject(keyPropertyColor, ArgbEvaluator(), dotDefaultColor, dotSelectedColor)
+		val propertyColor = PropertyValuesHolder.ofObject(
+				keyPropertyColor,
+				ArgbEvaluator(),
+				dotDefaultColor,
+				dotSelectedColor)
 
-		val propertyColorReverse =
-				PropertyValuesHolder.ofObject(keyPropertyColorReverse, ArgbEvaluator(), dotSelectedColor, dotDefaultColor)
+		val propertyColorReverse = PropertyValuesHolder.ofObject(
+				keyPropertyColorReverse,
+				ArgbEvaluator(),
+				dotSelectedColor,
+				dotDefaultColor)
 
-		val animator = ValueAnimator()
-
-		animator.run {
+		return ValueAnimator().apply {
 			setValues(propertyMoveForwardFactor,
 					propertyColor,
 					propertyColorReverse)
@@ -196,8 +211,6 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 			duration = animationDuration
 			addUpdateListener { animation -> updateValues(animation) }
 		}
-
-		return animator
 	}
 
 	private fun setupPadding() {
@@ -214,15 +227,15 @@ class FlexiblePageIndicator(context: Context, attrs: AttributeSet) : View(contex
 		cursorEndX = viewPaddingStart + (0.5F + cursorEndPosition) * dotSpace
 	}
 
-	private fun fixPadding(horizontalFix: Int, verticalFix: Int) {
-		if (horizontalFix > 0) {
-			viewPaddingStart = horizontalFix
-			viewPaddingEnd = horizontalFix
+	private fun fixPadding(horizontalPadding: Int, verticalPadding: Int) {
+		if (horizontalPadding > 0) {
+			viewPaddingStart = horizontalPadding
+			viewPaddingEnd = horizontalPadding
 		}
 
-		if (verticalFix > 0) {
-			viewPaddingTop = verticalFix
-			viewPaddingBottom = verticalFix
+		if (verticalPadding > 0) {
+			viewPaddingTop = verticalPadding
+			viewPaddingBottom = verticalPadding
 		}
 	}
 
