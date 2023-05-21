@@ -1,19 +1,19 @@
-apply plugin: 'com.android.application'
-
-apply plugin: 'kotlin-android'
-
-apply plugin: 'kotlin-android-extensions'
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
 
 android {
-    compileSdkVersion 28
+    namespace 'inc.cbrt4.flexiblepagecontroldemo'
+    compileSdkVersion 33
 
     defaultConfig {
-        applicationId "inc.cbrt4.flexiblepagecontroldemo"
-        minSdkVersion 14
-        targetSdkVersion 28
+        applicationId defaultApplicationId
+        minSdkVersion 21
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -22,17 +22,57 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    lint {
+        lintConfig file('lint.xml')
+    }
+
+    buildFeatures {
+        viewBinding = true
+    }
+
+    flavorDimensions "product"
+
+    productFlavors {
+        color {
+            dimension "product"
+            applicationId "${defaultApplicationId}.color"
+            buildConfigField "boolean", "IS_COLOR", "true"
+        }
+
+        picture {
+            dimension "product"
+            applicationId "${defaultApplicationId}.picture"
+            buildConfigField "boolean", "IS_COLOR", "false"
+        }
+
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "flexiblePageControlDemo-${productFlavors.name}-${defaultConfig.versionName}-${variant.buildType.name}.apk"
+        }
+    }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation"org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'com.android.support:appcompat-v7:28.0.0'
-    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    implementation "androidx.appcompat:appcompat:$androidxVersion"
+    implementation "androidx.constraintlayout:constraintlayout:$constraintLayoutVersion"
 
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
     releaseApi project(path: ':flexiblepageindicator')
     debugApi project(path: ':flexiblepageindicator')

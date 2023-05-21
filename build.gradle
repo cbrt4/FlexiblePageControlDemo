@@ -1,27 +1,30 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    ext.kotlin_version = '1.2.71'
-    repositories {
-        google()
-        jcenter()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:3.2.1'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+	ext.defaultApplicationId = "inc.cbrt4.flexiblepagecontroldemo"
+	ext.gradleVersion = '8.0.1'
+	ext.kotlinVersion = '1.8.21'
+	ext.androidxVersion = '1.6.1'
+	ext.constraintLayoutVersion = '2.1.4'
 
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
-    }
+	repositories {
+		google()
+		mavenCentral()
+	}
+
+	dependencies {
+		classpath "com.android.tools.build:gradle:$gradleVersion"
+		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+	}
 }
 
 allprojects {
-    repositories {
-        google()
-        jcenter()
-    }
+	repositories {
+		google()
+		mavenCentral()
+	}
 }
 
 task clean(type: Delete) {
-    delete rootProject.buildDir
+	delete rootProject.buildDir
 }

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="dot_size_default">8dp</dimen>
-    <dimen name="dot_space_default">12dp</dimen>
+	<dimen name="dot_size_default">8dp</dimen>
+	<dimen name="dot_space_default">16dp</dimen>
+	<dimen name="touch_threshold">16dp</dimen>
 </resources>

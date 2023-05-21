@@ -1,16 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
+	<color name="colorPrimary">#333333</color>
+	<color name="colorPrimaryDark">#333333</color>
+	<color name="colorAccent">#1e88e5</color>
 
-    <color name="colorRed">#80FF0000</color>
-    <color name="colorOrange">#80FFA500</color>
-    <color name="colorYellow">#80FFFF00</color>
-    <color name="colorGreen">#8000FF00</color>
-    <color name="colorBlue">#80007FFF</color>
-    <color name="colorIndigo">#800000FF</color>
-    <color name="colorViolet">#807F00FF</color>
-    <color name="colorWhite">#80FFFFFF</color>
-    <color name="colorGrey">#80808080</color>
+	<color name="colorTransparent">#00000000</color>
+	<color name="colorSemiTransparent">#66000000</color>
+
+	<color name="colorViewPager0">#5cbae6</color>
+	<color name="colorViewPager1">#b6d957</color>
+	<color name="colorViewPager2">#fac364</color>
+	<color name="colorViewPager3">#8cd3ff</color>
+	<color name="colorViewPager4">#d998cb</color>
+	<color name="colorViewPager5">#f2d249</color>
+	<color name="colorViewPager6">#93b9c6</color>
+	<color name="colorViewPager7">#ccc5a8</color>
+	<color name="colorViewPager8">#52bacc</color>
+	<color name="colorViewPager9">#dbdb46</color>
+	<color name="colorViewPager10">#98aafb</color>
 </resources>
